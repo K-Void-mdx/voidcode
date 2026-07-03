@@ -1,0 +1,3 @@
+"""
+VOIDCODE configuration package.
+"""

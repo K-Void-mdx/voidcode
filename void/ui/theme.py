@@ -1,0 +1,7 @@
+WELCOME_BORDER = "green"
+
+WELCOME_TITLE = "🚀 VOIDCODE"
+
+PRIMARY_COLOR = "bold cyan"
+
+SECONDARY_COLOR = "white"
