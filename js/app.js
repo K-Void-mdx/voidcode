@@ -328,15 +328,22 @@ function renderLogin(app) {
     <div class="page" style="max-width:400px;margin:2rem auto">
       <div style="text-align:center;margin-bottom:1.5rem">
         <div style="font-size:2rem;margin-bottom:0.5rem">◇</div>
-        <h1 style="font-size:1.5rem">Welcome to K-VOID</h1>
-        <p style="color:var(--text-dim);font-size:0.9rem">Log in or create your account</p>
+        <h1 style="font-size:1.5rem">Welcome Back</h1>
+        <p style="color:var(--text-dim);font-size:0.9rem">Log in to continue learning</p>
       </div>
-      <div style="display:flex;flex-direction:column;gap:1rem">
+      <form id="loginForm" onsubmit="handleLoginSubmit(event)" style="display:flex;flex-direction:column;gap:1rem">
         <div>
-          <label style="display:block;font-size:0.85rem;color:var(--text-dim);margin-bottom:0.3rem">Email address</label>
-          <input type="email" id="authEmail" placeholder="you@example.com" style="width:100%;padding:0.8rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem">
+          <label style="display:block;font-size:0.85rem;color:var(--text-dim);margin-bottom:0.2rem">Email</label>
+          <input type="email" id="loginEmail" required style="width:100%;padding:0.8rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem">
         </div>
-        <button id="sendCodeBtn" onclick="handleSendCode()" style="padding:0.8rem;background:var(--primary);border:none;border-radius:8px;color:white;font-size:1rem;font-weight:600;cursor:pointer">Send Code →</button>
+        <div>
+          <label style="display:block;font-size:0.85rem;color:var(--text-dim);margin-bottom:0.2rem">Password</label>
+          <input type="password" id="loginPassword" required style="width:100%;padding:0.8rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem">
+        </div>
+        <button type="submit" style="padding:0.8rem;background:var(--primary);border:none;border-radius:8px;color:white;font-size:1rem;font-weight:600;cursor:pointer">Log In</button>
+        <p style="text-align:center;font-size:0.85rem">
+          <a onclick="handleSendCodeLogin()" style="color:var(--accent);cursor:pointer;text-decoration:underline">Send code instead</a>
+        </p>
         <div style="position:relative;text-align:center">
           <span style="background:var(--bg);padding:0 0.8rem;color:var(--text-dark);font-size:0.8rem;position:relative;z-index:1">or</span>
           <div style="border-top:1px solid var(--border);margin-top:-0.6rem"></div>
@@ -344,14 +351,13 @@ function renderLogin(app) {
         <button type="button" onclick="handleGoogleLogin()" style="padding:0.8rem;background:white;border:none;border-radius:8px;color:#333;font-size:1rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem">
           <span style="font-size:1.2rem">G</span> Continue with Google
         </button>
-        <p style="text-align:center;color:var(--text-dim);font-size:0.85rem;margin-top:0.5rem">
+        <p style="text-align:center;color:var(--text-dim);font-size:0.85rem;margin-top:0.3rem">
           New here? <a onclick="navigate('signup')" style="color:var(--accent);cursor:pointer;text-decoration:underline">Create an account</a>
         </p>
-      </div>
-      <div id="authError" style="color:var(--danger);font-size:0.85rem;text-align:center;margin-top:0.5rem"></div>
+      </form>
+      <div id="loginError" style="color:var(--danger);font-size:0.85rem;text-align:center;margin-top:0.5rem"></div>
     </div>`
-    const el = document.getElementById('authEmail')
-    if (el) setTimeout(() => el.focus(), 100)
+    setTimeout(() => document.getElementById('loginEmail')?.focus(), 100)
 }
 
 // ===== SIGNUP PAGE =====
@@ -363,17 +369,13 @@ function renderSignup(app) {
         <p style="color:var(--text-dim);font-size:0.85rem">Join K-VOID and start learning</p>
       </div>
       <form id="signupForm" onsubmit="handleSignupSubmit(event)" style="display:flex;flex-direction:column;gap:1rem">
-
-        <!-- PHOTO -->
         <div style="text-align:center">
           <div id="photoPreview" style="width:90px;height:90px;border-radius:50%;background:var(--bg-card);border:2px dashed var(--border);margin:0 auto;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer" onclick="document.getElementById('photoInput').click()">
             <span style="font-size:2rem;color:var(--text-dark)">+</span>
           </div>
           <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="handlePhotoPick(event)">
-          <p style="font-size:0.75rem;color:var(--text-dim);margin-top:0.3rem;cursor:pointer" onclick="document.getElementById('photoInput').click()">Add profile photo (optional)</p>
+          <p style="font-size:0.75rem;color:var(--text-dim);margin-top:0.3rem;cursor:pointer" onclick="document.getElementById('photoInput').click()">Add profile photo</p>
         </div>
-
-        <!-- NAME ROW -->
         <div style="display:flex;gap:0.8rem">
           <div style="flex:1">
             <label style="display:block;font-size:0.8rem;color:var(--text-dim);margin-bottom:0.2rem">First name</label>
@@ -384,14 +386,10 @@ function renderSignup(app) {
             <input type="text" id="slname" required style="width:100%;padding:0.7rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.95rem">
           </div>
         </div>
-
-        <!-- USERNAME -->
         <div>
           <label style="display:block;font-size:0.8rem;color:var(--text-dim);margin-bottom:0.2rem">Username</label>
           <input type="text" id="susername" required style="width:100%;padding:0.7rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.95rem">
         </div>
-
-        <!-- GENDER -->
         <div>
           <label style="display:block;font-size:0.8rem;color:var(--text-dim);margin-bottom:0.3rem">Gender</label>
           <div style="display:flex;gap:0.8rem">
@@ -399,36 +397,27 @@ function renderSignup(app) {
             <button type="button" id="genderFemale" onclick="selectGender('female')" style="flex:1;padding:0.6rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text);font-size:0.9rem;cursor:pointer">♀ Female</button>
           </div>
         </div>
-
-        <!-- EMAIL -->
         <div>
           <label style="display:block;font-size:0.8rem;color:var(--text-dim);margin-bottom:0.2rem">Email</label>
           <input type="email" id="semail" required style="width:100%;padding:0.7rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.95rem">
         </div>
-
-        <!-- PASSWORD -->
         <div>
           <label style="display:block;font-size:0.8rem;color:var(--text-dim);margin-bottom:0.2rem">Password</label>
-          <input type="password" id="spassword" required style="width:100%;padding:0.7rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.95rem" oninput="updatePasswordStrength()">
+          <input type="password" id="spassword" required minlength="6" style="width:100%;padding:0.7rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.95rem" oninput="updatePasswordStrength()">
           <div style="height:4px;background:var(--border);border-radius:2px;margin-top:0.3rem;overflow:hidden">
             <div id="pwStrengthBar" style="height:100%;width:0%;border-radius:2px;transition:all 0.3s"></div>
           </div>
           <p id="pwStrengthLabel" style="font-size:0.75rem;color:var(--text-dark);margin-top:0.2rem"></p>
         </div>
-
-        <!-- CONFIRM PASSWORD -->
         <div>
           <label style="display:block;font-size:0.8rem;color:var(--text-dim);margin-bottom:0.2rem">Confirm password</label>
-          <input type="password" id="sconfirm" required style="width:100%;padding:0.7rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.95rem" oninput="updatePasswordMatch()">
+          <input type="password" id="sconfirm" required minlength="6" style="width:100%;padding:0.7rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.95rem" oninput="updatePasswordMatch()">
           <div style="height:4px;background:var(--border);border-radius:2px;margin-top:0.3rem;overflow:hidden">
             <div id="pwMatchBar" style="height:100%;width:0%;border-radius:2px;transition:all 0.3s"></div>
           </div>
           <p id="pwMatchLabel" style="font-size:0.75rem;color:var(--text-dark);margin-top:0.2rem"></p>
         </div>
-
-        <!-- SUBMIT -->
         <button type="submit" id="signupBtn" style="padding:0.8rem;background:var(--primary);border:none;border-radius:8px;color:white;font-size:1rem;font-weight:600;cursor:pointer">Create Account →</button>
-
         <p style="text-align:center;color:var(--text-dim);font-size:0.85rem">
           Already have an account? <a onclick="navigate('login')" style="color:var(--accent);cursor:pointer;text-decoration:underline">Log in</a>
         </p>
@@ -472,12 +461,7 @@ window.updatePasswordStrength = function() {
     const pct = (score / 5) * 100
     bar.style.width = pct + '%'
     bar.style.background = strengthColor(score)
-    if (pw.length === 0) {
-        bar.style.width = '0%'
-        label.textContent = ''
-    } else {
-        label.textContent = strengthLabel(score)
-    }
+    label.textContent = pw.length ? strengthLabel(score) : ''
 }
 
 // ===== PASSWORD MATCH =====
@@ -487,32 +471,22 @@ window.updatePasswordMatch = function() {
     const bar = document.getElementById('pwMatchBar')
     const label = document.getElementById('pwMatchLabel')
     if (!bar || !label) return
-    if (confirm.length === 0) {
-        bar.style.width = '0%'
-        label.textContent = ''
-        return
-    }
+    if (!confirm) { bar.style.width = '0%'; label.textContent = ''; return }
     if (pw === confirm) {
-        bar.style.width = '100%'
-        bar.style.background = '#06d6a0'
-        label.textContent = '✓ Passwords match'
-        label.style.color = '#06d6a0'
+        bar.style.width = '100%'; bar.style.background = '#06d6a0'
+        label.textContent = '✓ Match'; label.style.color = '#06d6a0'
     } else {
-        const match = pw.startsWith(confirm) ? 50 : 20
-        bar.style.width = match + '%'
-        bar.style.background = '#ef4444'
-        label.textContent = '✗ Passwords do not match'
-        label.style.color = '#ef4444'
+        bar.style.width = pw.startsWith(confirm) ? '60%' : '30%'; bar.style.background = '#ef4444'
+        label.textContent = '✗ No match'; label.style.color = '#ef4444'
     }
 }
 
-// ===== SIGNUP SUBMIT =====
+// ===== SIGNUP: CREATE ACCOUNT + SEND CODE =====
 window.handleSignupSubmit = async function(e) {
     e.preventDefault()
-    const errEl = document.getElementById('signupError')
+    const err = document.getElementById('signupError')
     const btn = document.getElementById('signupBtn')
-    errEl.textContent = ''
-
+    err.textContent = ''
     const fname = document.getElementById('sfname').value.trim()
     const lname = document.getElementById('slname').value.trim()
     const uname = document.getElementById('susername').value.trim()
@@ -520,55 +494,60 @@ window.handleSignupSubmit = async function(e) {
     const pw = document.getElementById('spassword').value
     const confirm = document.getElementById('sconfirm').value
     const gender = window._selectedGender || ''
-
-    if (!fname || !lname || !uname || !email || !pw || !confirm) {
-        errEl.textContent = 'Please fill in all fields.'
-        return
-    }
-    if (!gender) { errEl.textContent = 'Please select your gender.'; return }
-    if (pw.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return }
-    if (pw !== confirm) { errEl.textContent = 'Passwords do not match.'; return }
-
-    btn.textContent = 'Sending code...'
+    if (!fname || !lname || !uname || !email || !pw || !confirm) { err.textContent = 'Fill all fields.'; return }
+    if (!gender) { err.textContent = 'Select your gender.'; return }
+    if (pw.length < 6) { err.textContent = 'Password min 6 characters.'; return }
+    if (pw !== confirm) { err.textContent = 'Passwords do not match.'; return }
+    btn.textContent = 'Creating account...'
     btn.disabled = true
-
-    // Save profile data for after verification
     window._pendingProfile = {
-        first_name: fname,
-        last_name: lname,
-        username: uname,
-        gender: gender,
-        avatar_url: window._avatarData || getAvatarURL(gender, uname),
-        password: pw
+        first_name: fname, last_name: lname, username: uname,
+        gender: gender, avatar_url: window._avatarData || getAvatarURL(gender, uname),
+        password: pw, email: email
     }
-
     try {
-        // Send OTP — this creates the user + sends 6-digit code
-        await window.sendOTP(email)
+        // 1. Create user with email + password (stores profile in metadata)
+        await window.signUpWithEmail(email, pw, {
+            first_name: fname, last_name: lname, username: uname,
+            gender: gender, avatar_url: window._avatarData || getAvatarURL(gender, uname)
+        })
+        // 2. Send 6-digit verification code to email
+        await window.sendCode(email)
         navigate('verify', encodeURIComponent(email))
-    } catch (err) {
-        errEl.textContent = err.message || 'Failed to send code.'
+    } catch (e) {
+        err.textContent = e.message || 'Signup failed.'
         btn.textContent = 'Create Account →'
         btn.disabled = false
     }
 }
 
-// ===== LOGIN: SEND CODE =====
-window.handleSendCode = async function() {
-    const email = document.getElementById('authEmail')?.value.trim()
-    const errEl = document.getElementById('authError')
-    const btn = document.getElementById('sendCodeBtn')
-    errEl.textContent = ''
-    if (!email || !email.includes('@')) { errEl.textContent = 'Please enter a valid email.'; return }
-    btn.textContent = 'Sending...'
-    btn.disabled = true
+// ===== LOGIN: EMAIL + PASSWORD =====
+window.handleLoginSubmit = async function(e) {
+    e.preventDefault()
+    const email = document.getElementById('loginEmail').value.trim()
+    const pw = document.getElementById('loginPassword').value
+    const err = document.getElementById('loginError')
+    err.textContent = ''
+    if (!email || !pw) { err.textContent = 'Enter email and password.'; return }
     try {
-        await window.sendOTP(email)
+        await window.loginWithPassword(email, pw)
+        navigate('home')
+    } catch (e) {
+        err.textContent = e.message || 'Invalid email or password.'
+    }
+}
+
+// ===== LOGIN: SEND CODE (instead of password) =====
+window.handleSendCodeLogin = async function() {
+    const email = document.getElementById('loginEmail')?.value.trim()
+    const err = document.getElementById('loginError')
+    err.textContent = ''
+    if (!email || !email.includes('@')) { err.textContent = 'Enter your email first.'; return }
+    try {
+        await window.sendCode(email)
         navigate('verify', encodeURIComponent(email))
-    } catch (err) {
-        errEl.textContent = err.message || 'Failed to send code.'
-        btn.textContent = 'Send Code →'
-        btn.disabled = false
+    } catch (e) {
+        err.textContent = e.message || 'Failed to send code.'
     }
 }
 
@@ -583,16 +562,14 @@ function renderVerify(app, email) {
         <h1 style="font-size:1.3rem">Check your email</h1>
         <p style="color:var(--text-dim);font-size:0.9rem">We sent a 6-digit code to</p>
         <p style="color:var(--text);font-weight:600;font-size:0.95rem">${decoded}</p>
+        <p style="color:var(--text-dark);font-size:0.8rem;margin-top:0.5rem">The code is in the email <strong>subject line</strong></p>
       </div>
       <div style="display:flex;flex-direction:column;gap:1rem">
-        <div>
-          <label style="display:block;font-size:0.85rem;color:var(--text-dim);margin-bottom:0.5rem;text-align:center">Enter verification code</label>
-          <div style="display:flex;gap:0.5rem;justify-content:center" id="codeInputs">
-            ${[1,2,3,4,5,6].map(i => `<input type="text" maxlength="1" id="c${i}" class="code-digit" style="width:44px;height:52px;text-align:center;font-size:1.4rem;font-weight:700;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text)">`).join('')}
-          </div>
+        <div style="display:flex;gap:0.5rem;justify-content:center">
+          ${[1,2,3,4,5,6].map(i => `<input type="text" maxlength="1" id="c${i}" class="code-digit" style="width:44px;height:52px;text-align:center;font-size:1.4rem;font-weight:700;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text)">`).join('')}
         </div>
-        <button id="verifyBtn" onclick="window.handleVerify('${decoded}')" style="padding:0.8rem;background:var(--primary);border:none;border-radius:8px;color:white;font-size:1rem;font-weight:600;cursor:pointer">Verify →</button>
-        <button onclick="navigate('login')" style="padding:0.5rem;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-size:0.85rem;cursor:pointer">Use different email</button>
+        <button id="verifyBtn" onclick="handleVerifyCode('${decoded}')" style="padding:0.8rem;background:var(--primary);border:none;border-radius:8px;color:white;font-size:1rem;font-weight:600;cursor:pointer">Verify →</button>
+        <button onclick="navigate('login')" style="padding:0.5rem;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-size:0.85rem;cursor:pointer">Back to login</button>
       </div>
       <div id="verifyError" style="color:var(--danger);font-size:0.85rem;text-align:center;margin-top:0.5rem"></div>
     </div>`
@@ -603,38 +580,38 @@ function renderVerify(app, email) {
         el.addEventListener('input', () => { if (el.value && i < 6) document.getElementById(`c${i+1}`)?.focus() })
         el.addEventListener('keydown', (e) => {
             if (e.key === 'Backspace' && !el.value && i > 1) document.getElementById(`c${i-1}`)?.focus()
-            if (e.key === 'Enter') window.handleVerify(decoded)
+            if (e.key === 'Enter') handleVerifyCode(decoded)
         })
     }
 }
 
 // ===== VERIFY CODE =====
-window.handleVerify = async function(email) {
+window.handleVerifyCode = async function(email) {
     let token = ''
     for (let i = 1; i <= 6; i++) token += document.getElementById(`c${i}`)?.value || ''
-    const errEl = document.getElementById('verifyError')
+    const err = document.getElementById('verifyError')
     const btn = document.getElementById('verifyBtn')
-    errEl.textContent = ''
-    if (token.length !== 6) { errEl.textContent = 'Enter all 6 digits.'; return }
+    err.textContent = ''
+    if (token.length !== 6) { err.textContent = 'Enter all 6 digits.'; return }
     btn.textContent = 'Verifying...'
     btn.disabled = true
     try {
-        await window.verifyOTP(email, token)
-        // If there's pending profile data, update it after successful login
+        await window.verifyCode(email, token)
+        // If this was a signup (pending profile), set password + update metadata
         if (window._pendingProfile) {
             try {
-                const profile = { ...window._pendingProfile }
-                delete profile.password
-                await window.updateUserProfile(profile)
-                if (window._pendingProfile.password) {
-                    try { await window.updatePassword(window._pendingProfile.password) } catch {}
-                }
+                const p = { ...window._pendingProfile }
+                const pw = p.password
+                delete p.password
+                delete p.email
+                await window.updateProfile(p)
+                if (pw) { try { await window.setPassword(pw) } catch {} }
             } catch {}
             delete window._pendingProfile
         }
         navigate('home')
-    } catch (err) {
-        errEl.textContent = err.message || 'Invalid code. Try again.'
+    } catch (e) {
+        err.textContent = e.message || 'Invalid code.'
         btn.textContent = 'Verify →'
         btn.disabled = false
     }
@@ -642,6 +619,6 @@ window.handleVerify = async function(email) {
 
 // ===== GOOGLE LOGIN =====
 window.handleGoogleLogin = async function() {
-    try { await window.signInWithGoogle() }
-    catch { const el = document.getElementById('authError'); if (el) el.textContent = 'Google not configured yet.' }
+    try { await window.loginWithGoogle() }
+    catch { const el = document.getElementById('loginError'); if (el) el.textContent = 'Google not configured.' }
 }
