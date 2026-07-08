@@ -59,6 +59,7 @@ function render() {
         case 'progress': renderProgress(app); break
         case 'about': renderAbout(app); break
         case 'login': renderLogin(app); break
+        case 'signup': renderSignup(app); break
         case 'verify': renderVerify(app, params[0]); break
         default: renderHome(app)
     }
@@ -273,16 +274,49 @@ function renderAbout(app) {
     </div></div>`
 }
 
+// ===== PASSWORD STRENGTH =====
+function getPasswordStrength(pw) {
+    let score = 0
+    if (pw.length >= 6) score++
+    if (pw.length >= 8) score++
+    if (/[A-Z]/.test(pw)) score++
+    if (/[a-z]/.test(pw)) score++
+    if (/[0-9]/.test(pw)) score++
+    if (/[^A-Za-z0-9]/.test(pw)) score++
+    return Math.min(score, 5)
+}
+function strengthColor(score) {
+    if (score <= 1) return '#ef4444'
+    if (score <= 3) return '#f59e0b'
+    return '#06d6a0'
+}
+function strengthLabel(score) {
+    if (score <= 1) return 'Weak'
+    if (score <= 3) return 'Medium'
+    return 'Strong'
+}
+
+// ===== AVATAR =====
+function getAvatarURL(gender, seed) {
+    const s = seed || 'user'
+    if (gender === 'male') {
+        return `https://api.dicebear.com/7.x/avataaars/svg?seed=${s}&accessoriesType=blank&topType=shortHairShortWaved&facialHairType=beardMedium&clothingType=blazer&eyeType=default&mouthType=smile&skinColor=light`
+    } else if (gender === 'female') {
+        return `https://api.dicebear.com/7.x/avataaars/svg?seed=${s}_f&accessoriesType=blank&topType=longHairStraight&facialHairType=blank&clothingType=blazer&eyeType=default&mouthType=smile&skinColor=light`
+    }
+    return `https://api.dicebear.com/7.x/initials/svg?seed=${s}&backgroundColor=7c3aed`
+}
+
 // ===== AUTH PAGES =====
 function renderLogin(app) {
     app.innerHTML = `
     <div class="page" style="max-width:400px;margin:2rem auto">
       <div style="text-align:center;margin-bottom:1.5rem">
         <div style="font-size:2rem;margin-bottom:0.5rem">◇</div>
-        <h1 style="font-size:1.5rem">K-VOID Programming Hub</h1>
-        <p style="color:var(--text-dim);font-size:0.9rem">Enter your email to get started</p>
+        <h1 style="font-size:1.5rem">Welcome to K-VOID</h1>
+        <p style="color:var(--text-dim);font-size:0.9rem">Log in or create your account</p>
       </div>
-      <div id="authBox" style="display:flex;flex-direction:column;gap:1rem">
+      <div style="display:flex;flex-direction:column;gap:1rem">
         <div>
           <label style="display:block;font-size:0.85rem;color:var(--text-dim);margin-bottom:0.3rem">Email address</label>
           <input type="email" id="authEmail" placeholder="you@example.com" style="width:100%;padding:0.8rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem">
@@ -295,6 +329,9 @@ function renderLogin(app) {
         <button type="button" onclick="handleGoogleLogin()" style="padding:0.8rem;background:white;border:none;border-radius:8px;color:#333;font-size:1rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem">
           <span style="font-size:1.2rem">G</span> Continue with Google
         </button>
+        <p style="text-align:center;color:var(--text-dim);font-size:0.85rem;margin-top:0.5rem">
+          New here? <a onclick="navigate('signup')" style="color:var(--accent);cursor:pointer;text-decoration:underline">Create an account</a>
+        </p>
       </div>
       <div id="authError" style="color:var(--danger);font-size:0.85rem;text-align:center;margin-top:0.5rem"></div>
     </div>`
@@ -302,6 +339,225 @@ function renderLogin(app) {
     if (el) setTimeout(() => el.focus(), 100)
 }
 
+// ===== SIGNUP PAGE =====
+function renderSignup(app) {
+    app.innerHTML = `
+    <div class="page" style="max-width:480px;margin:1rem auto">
+      <div style="text-align:center;margin-bottom:1.2rem">
+        <h1 style="font-size:1.4rem">Create Your Account</h1>
+        <p style="color:var(--text-dim);font-size:0.85rem">Join K-VOID and start learning</p>
+      </div>
+      <form id="signupForm" onsubmit="handleSignupSubmit(event)" style="display:flex;flex-direction:column;gap:1rem">
+
+        <!-- PHOTO -->
+        <div style="text-align:center">
+          <div id="photoPreview" style="width:90px;height:90px;border-radius:50%;background:var(--bg-card);border:2px dashed var(--border);margin:0 auto;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer" onclick="document.getElementById('photoInput').click()">
+            <span style="font-size:2rem;color:var(--text-dark)">+</span>
+          </div>
+          <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="handlePhotoPick(event)">
+          <p style="font-size:0.75rem;color:var(--text-dim);margin-top:0.3rem;cursor:pointer" onclick="document.getElementById('photoInput').click()">Add profile photo (optional)</p>
+        </div>
+
+        <!-- NAME ROW -->
+        <div style="display:flex;gap:0.8rem">
+          <div style="flex:1">
+            <label style="display:block;font-size:0.8rem;color:var(--text-dim);margin-bottom:0.2rem">First name</label>
+            <input type="text" id="sfname" required style="width:100%;padding:0.7rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.95rem">
+          </div>
+          <div style="flex:1">
+            <label style="display:block;font-size:0.8rem;color:var(--text-dim);margin-bottom:0.2rem">Last name</label>
+            <input type="text" id="slname" required style="width:100%;padding:0.7rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.95rem">
+          </div>
+        </div>
+
+        <!-- USERNAME -->
+        <div>
+          <label style="display:block;font-size:0.8rem;color:var(--text-dim);margin-bottom:0.2rem">Username</label>
+          <input type="text" id="susername" required style="width:100%;padding:0.7rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.95rem">
+        </div>
+
+        <!-- GENDER -->
+        <div>
+          <label style="display:block;font-size:0.8rem;color:var(--text-dim);margin-bottom:0.3rem">Gender</label>
+          <div style="display:flex;gap:0.8rem">
+            <button type="button" id="genderMale" onclick="selectGender('male')" style="flex:1;padding:0.6rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text);font-size:0.9rem;cursor:pointer">♂ Male</button>
+            <button type="button" id="genderFemale" onclick="selectGender('female')" style="flex:1;padding:0.6rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text);font-size:0.9rem;cursor:pointer">♀ Female</button>
+          </div>
+        </div>
+
+        <!-- EMAIL -->
+        <div>
+          <label style="display:block;font-size:0.8rem;color:var(--text-dim);margin-bottom:0.2rem">Email</label>
+          <input type="email" id="semail" required style="width:100%;padding:0.7rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.95rem">
+        </div>
+
+        <!-- PASSWORD -->
+        <div>
+          <label style="display:block;font-size:0.8rem;color:var(--text-dim);margin-bottom:0.2rem">Password</label>
+          <input type="password" id="spassword" required style="width:100%;padding:0.7rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.95rem" oninput="updatePasswordStrength()">
+          <div style="height:4px;background:var(--border);border-radius:2px;margin-top:0.3rem;overflow:hidden">
+            <div id="pwStrengthBar" style="height:100%;width:0%;border-radius:2px;transition:all 0.3s"></div>
+          </div>
+          <p id="pwStrengthLabel" style="font-size:0.75rem;color:var(--text-dark);margin-top:0.2rem"></p>
+        </div>
+
+        <!-- CONFIRM PASSWORD -->
+        <div>
+          <label style="display:block;font-size:0.8rem;color:var(--text-dim);margin-bottom:0.2rem">Confirm password</label>
+          <input type="password" id="sconfirm" required style="width:100%;padding:0.7rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.95rem" oninput="updatePasswordMatch()">
+          <div style="height:4px;background:var(--border);border-radius:2px;margin-top:0.3rem;overflow:hidden">
+            <div id="pwMatchBar" style="height:100%;width:0%;border-radius:2px;transition:all 0.3s"></div>
+          </div>
+          <p id="pwMatchLabel" style="font-size:0.75rem;color:var(--text-dark);margin-top:0.2rem"></p>
+        </div>
+
+        <!-- SUBMIT -->
+        <button type="submit" id="signupBtn" style="padding:0.8rem;background:var(--primary);border:none;border-radius:8px;color:white;font-size:1rem;font-weight:600;cursor:pointer">Create Account →</button>
+
+        <p style="text-align:center;color:var(--text-dim);font-size:0.85rem">
+          Already have an account? <a onclick="navigate('login')" style="color:var(--accent);cursor:pointer;text-decoration:underline">Log in</a>
+        </p>
+      </form>
+      <div id="signupError" style="color:var(--danger);font-size:0.85rem;text-align:center;margin-top:0.5rem"></div>
+    </div>`
+}
+
+// ===== GENDER SELECT =====
+window.selectGender = function(g) {
+    window._selectedGender = g
+    const m = document.getElementById('genderMale')
+    const f = document.getElementById('genderFemale')
+    if (!m || !f) return
+    m.style.borderColor = g === 'male' ? 'var(--primary)' : 'var(--border)'
+    m.style.background = g === 'male' ? 'var(--primary-glow)' : 'var(--bg-card)'
+    f.style.borderColor = g === 'female' ? 'var(--primary)' : 'var(--border)'
+    f.style.background = g === 'female' ? 'var(--primary-glow)' : 'var(--bg-card)'
+}
+
+// ===== PHOTO PICK =====
+window.handlePhotoPick = function(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = function(ev) {
+        const div = document.getElementById('photoPreview')
+        if (div) div.innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+        window._avatarData = ev.target.result
+    }
+    reader.readAsDataURL(file)
+}
+
+// ===== PASSWORD STRENGTH =====
+window.updatePasswordStrength = function() {
+    const pw = document.getElementById('spassword')?.value || ''
+    const score = getPasswordStrength(pw)
+    const bar = document.getElementById('pwStrengthBar')
+    const label = document.getElementById('pwStrengthLabel')
+    if (!bar || !label) return
+    const pct = (score / 5) * 100
+    bar.style.width = pct + '%'
+    bar.style.background = strengthColor(score)
+    if (pw.length === 0) {
+        bar.style.width = '0%'
+        label.textContent = ''
+    } else {
+        label.textContent = strengthLabel(score)
+    }
+}
+
+// ===== PASSWORD MATCH =====
+window.updatePasswordMatch = function() {
+    const pw = document.getElementById('spassword')?.value || ''
+    const confirm = document.getElementById('sconfirm')?.value || ''
+    const bar = document.getElementById('pwMatchBar')
+    const label = document.getElementById('pwMatchLabel')
+    if (!bar || !label) return
+    if (confirm.length === 0) {
+        bar.style.width = '0%'
+        label.textContent = ''
+        return
+    }
+    if (pw === confirm) {
+        bar.style.width = '100%'
+        bar.style.background = '#06d6a0'
+        label.textContent = '✓ Passwords match'
+        label.style.color = '#06d6a0'
+    } else {
+        const match = pw.startsWith(confirm) ? 50 : 20
+        bar.style.width = match + '%'
+        bar.style.background = '#ef4444'
+        label.textContent = '✗ Passwords do not match'
+        label.style.color = '#ef4444'
+    }
+}
+
+// ===== SIGNUP SUBMIT =====
+window.handleSignupSubmit = async function(e) {
+    e.preventDefault()
+    const errEl = document.getElementById('signupError')
+    const btn = document.getElementById('signupBtn')
+    errEl.textContent = ''
+
+    const fname = document.getElementById('sfname').value.trim()
+    const lname = document.getElementById('slname').value.trim()
+    const uname = document.getElementById('susername').value.trim()
+    const email = document.getElementById('semail').value.trim()
+    const pw = document.getElementById('spassword').value
+    const confirm = document.getElementById('sconfirm').value
+    const gender = window._selectedGender || ''
+
+    if (!fname || !lname || !uname || !email || !pw || !confirm) {
+        errEl.textContent = 'Please fill in all fields.'
+        return
+    }
+    if (!gender) { errEl.textContent = 'Please select your gender.'; return }
+    if (pw.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return }
+    if (pw !== confirm) { errEl.textContent = 'Passwords do not match.'; return }
+
+    btn.textContent = 'Sending code...'
+    btn.disabled = true
+
+    // Save profile data for after verification
+    window._pendingProfile = {
+        first_name: fname,
+        last_name: lname,
+        username: uname,
+        gender: gender,
+        avatar_url: window._avatarData || getAvatarURL(gender, uname),
+        password: pw
+    }
+
+    try {
+        // Send OTP — this creates the user + sends 6-digit code
+        await window.sendOTP(email)
+        navigate('verify', encodeURIComponent(email))
+    } catch (err) {
+        errEl.textContent = err.message || 'Failed to send code.'
+        btn.textContent = 'Create Account →'
+        btn.disabled = false
+    }
+}
+
+// ===== LOGIN: SEND CODE =====
+window.handleSendCode = async function() {
+    const email = document.getElementById('authEmail')?.value.trim()
+    const errEl = document.getElementById('authError')
+    const btn = document.getElementById('sendCodeBtn')
+    errEl.textContent = ''
+    if (!email || !email.includes('@')) { errEl.textContent = 'Please enter a valid email.'; return }
+    btn.textContent = 'Sending...'
+    btn.disabled = true
+    try {
+        await window.sendOTP(email)
+        navigate('verify', encodeURIComponent(email))
+    } catch (err) {
+        errEl.textContent = err.message || 'Failed to send code.'
+        btn.textContent = 'Send Code →'
+        btn.disabled = false
+    }
+}
+
+// ===== VERIFY PAGE =====
 function renderVerify(app, email) {
     if (!email) { navigate('login'); return }
     const decoded = decodeURIComponent(email)
@@ -320,79 +576,57 @@ function renderVerify(app, email) {
             ${[1,2,3,4,5,6].map(i => `<input type="text" maxlength="1" id="c${i}" class="code-digit" style="width:44px;height:52px;text-align:center;font-size:1.4rem;font-weight:700;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text)">`).join('')}
           </div>
         </div>
-        <button id="verifyBtn" onclick="handleVerify('${decoded}')" style="padding:0.8rem;background:var(--primary);border:none;border-radius:8px;color:white;font-size:1rem;font-weight:600;cursor:pointer">Verify & Login →</button>
+        <button id="verifyBtn" onclick="window.handleVerify('${decoded}')" style="padding:0.8rem;background:var(--primary);border:none;border-radius:8px;color:white;font-size:1rem;font-weight:600;cursor:pointer">Verify →</button>
         <button onclick="navigate('login')" style="padding:0.5rem;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-size:0.85rem;cursor:pointer">Use different email</button>
       </div>
       <div id="verifyError" style="color:var(--danger);font-size:0.85rem;text-align:center;margin-top:0.5rem"></div>
     </div>`
-    setTimeout(() => {
-        const c1 = document.getElementById('c1')
-        if (c1) c1.focus()
-    }, 100)
+    setTimeout(() => document.getElementById('c1')?.focus(), 100)
     for (let i = 1; i <= 6; i++) {
         const el = document.getElementById(`c${i}`)
         if (!el) continue
-        el.addEventListener('input', () => {
-            if (el.value && i < 6) document.getElementById(`c${i+1}`)?.focus()
-        })
+        el.addEventListener('input', () => { if (el.value && i < 6) document.getElementById(`c${i+1}`)?.focus() })
         el.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace' && !el.value && i > 1)
-                document.getElementById(`c${i-1}`)?.focus()
-            if (e.key === 'Enter') handleVerify(decoded)
+            if (e.key === 'Backspace' && !el.value && i > 1) document.getElementById(`c${i-1}`)?.focus()
+            if (e.key === 'Enter') window.handleVerify(decoded)
         })
     }
 }
 
-async function handleSendCode() {
-    const email = document.getElementById('authEmail').value.trim()
-    const errEl = document.getElementById('authError')
-    const btn = document.getElementById('sendCodeBtn')
-    errEl.textContent = ''
-    if (!email || !email.includes('@')) {
-        errEl.textContent = 'Please enter a valid email.'
-        return
-    }
-    btn.textContent = 'Sending...'
-    btn.disabled = true
-    try {
-        await window.sendOTP(email)
-        navigate('verify', encodeURIComponent(email))
-    } catch (err) {
-        errEl.textContent = err.message || 'Failed to send code.'
-        btn.textContent = 'Send Code →'
-        btn.disabled = false
-    }
-}
-
-async function handleVerify(email) {
+// ===== VERIFY CODE =====
+window.handleVerify = async function(email) {
     let token = ''
-    for (let i = 1; i <= 6; i++) {
-        token += document.getElementById(`c${i}`)?.value || ''
-    }
+    for (let i = 1; i <= 6; i++) token += document.getElementById(`c${i}`)?.value || ''
     const errEl = document.getElementById('verifyError')
     const btn = document.getElementById('verifyBtn')
     errEl.textContent = ''
-    if (token.length !== 6) {
-        errEl.textContent = 'Enter all 6 digits.'
-        return
-    }
+    if (token.length !== 6) { errEl.textContent = 'Enter all 6 digits.'; return }
     btn.textContent = 'Verifying...'
     btn.disabled = true
     try {
         await window.verifyOTP(email, token)
+        // If there's pending profile data, update it after successful login
+        if (window._pendingProfile) {
+            try {
+                const profile = { ...window._pendingProfile }
+                delete profile.password
+                await window.updateUserProfile(profile)
+                if (window._pendingProfile.password) {
+                    try { await window.updatePassword(window._pendingProfile.password) } catch {}
+                }
+            } catch {}
+            delete window._pendingProfile
+        }
         navigate('home')
     } catch (err) {
         errEl.textContent = err.message || 'Invalid code. Try again.'
-        btn.textContent = 'Verify & Login →'
+        btn.textContent = 'Verify →'
         btn.disabled = false
     }
 }
 
-async function handleGoogleLogin() {
-    try {
-        await window.signInWithGoogle()
-    } catch {
-        const el = document.getElementById('authError')
-        if (el) el.textContent = 'Google login not configured yet.'
-    }
+// ===== GOOGLE LOGIN =====
+window.handleGoogleLogin = async function() {
+    try { await window.signInWithGoogle() }
+    catch { const el = document.getElementById('authError'); if (el) el.textContent = 'Google not configured yet.' }
 }

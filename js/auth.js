@@ -3,25 +3,22 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 let _supabase = null
 let _user = null
-let _pendingEmail = null
 
-function loadSupabaseSDK() {
+function loadSDK() {
     if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
         _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
         return true
     }
     return false
 }
-function tryInit() {
-    if (!loadSupabaseSDK()) setTimeout(tryInit, 300)
-}
+function tryInit() { if (!loadSDK()) setTimeout(tryInit, 300) }
 tryInit()
 
 window.currentUser = null
 
+// Send OTP code to email (creates user automatically if new)
 window.sendOTP = async function(email) {
     if (!_supabase) throw new Error('Supabase not ready')
-    _pendingEmail = email
     const { data, error } = await _supabase.auth.signInWithOtp({
         email,
         options: { shouldCreateUser: true }
@@ -30,6 +27,7 @@ window.sendOTP = async function(email) {
     return data
 }
 
+// Verify OTP code
 window.verifyOTP = async function(email, token) {
     if (!_supabase) throw new Error('Supabase not ready')
     const { data, error } = await _supabase.auth.verifyOtp({
@@ -44,6 +42,38 @@ window.verifyOTP = async function(email, token) {
     return data
 }
 
+// Update user metadata after signup (name, username, gender, avatar)
+window.updateUserProfile = async function(profileData) {
+    if (!_supabase) throw new Error('Supabase not ready')
+    const { data, error } = await _supabase.auth.updateUser({
+        data: profileData
+    })
+    if (error) throw error
+    _user = data.user
+    window.currentUser = _user
+    return data
+}
+
+// Update password
+window.updatePassword = async function(newPassword) {
+    if (!_supabase) throw new Error('Supabase not ready')
+    const { data, error } = await _supabase.auth.updateUser({ password: newPassword })
+    if (error) throw error
+    return data
+}
+
+// Login with email + password (for returning users)
+window.signInWithPassword = async function(email, password) {
+    if (!_supabase) throw new Error('Supabase not ready')
+    const { data, error } = await _supabase.auth.signInWithPassword({ email, password })
+    if (error) throw error
+    _user = data.user
+    window.currentUser = _user
+    updateAuthUI()
+    return data
+}
+
+// Google login
 window.signInWithGoogle = async function() {
     if (!_supabase) throw new Error('Supabase not ready')
     const { data, error } = await _supabase.auth.signInWithOAuth({
@@ -54,6 +84,7 @@ window.signInWithGoogle = async function() {
     return data
 }
 
+// Logout
 window.logout = async function() {
     if (!_supabase) return
     await _supabase.auth.signOut()
@@ -63,14 +94,12 @@ window.logout = async function() {
     navigate('home')
 }
 
+// Check existing session
 async function checkUser() {
     if (!_supabase) { setTimeout(checkUser, 500); return }
     try {
         const { data: { user } } = await _supabase.auth.getUser()
-        if (user) {
-            _user = user
-            window.currentUser = user
-        }
+        if (user) { _user = user; window.currentUser = user }
     } catch {}
     updateAuthUI()
 }
@@ -79,7 +108,7 @@ function updateAuthUI() {
     const btn = document.getElementById('navAuthBtn')
     if (!btn) return
     if (_user) {
-        const name = _user.email ? _user.email.split('@')[0] : 'User'
+        const name = _user.user_metadata?.first_name || _user.email?.split('@')[0] || 'User'
         btn.textContent = `👤 ${name}`
         btn.onclick = window.logout
     } else {
