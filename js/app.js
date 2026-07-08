@@ -481,7 +481,7 @@ window.updatePasswordMatch = function() {
     }
 }
 
-// ===== SIGNUP: CREATE ACCOUNT + SEND CODE =====
+// ===== SIGNUP: CREATE ACCOUNT (auto-login since confirm email is OFF) =====
 window.handleSignupSubmit = async function(e) {
     e.preventDefault()
     const err = document.getElementById('signupError')
@@ -500,20 +500,13 @@ window.handleSignupSubmit = async function(e) {
     if (pw !== confirm) { err.textContent = 'Passwords do not match.'; return }
     btn.textContent = 'Creating account...'
     btn.disabled = true
-    window._pendingProfile = {
-        first_name: fname, last_name: lname, username: uname,
-        gender: gender, avatar_url: window._avatarData || getAvatarURL(gender, uname),
-        password: pw, email: email
-    }
+    const avatar = window._avatarData || getAvatarURL(gender, uname)
     try {
-        // 1. Create user with email + password (stores profile in metadata)
         await window.signUpWithEmail(email, pw, {
             first_name: fname, last_name: lname, username: uname,
-            gender: gender, avatar_url: window._avatarData || getAvatarURL(gender, uname)
+            gender: gender, avatar_url: avatar
         })
-        // 2. Send 6-digit verification code to email
-        await window.sendCode(email)
-        navigate('verify', encodeURIComponent(email))
+        navigate('home')
     } catch (e) {
         err.textContent = e.message || 'Signup failed.'
         btn.textContent = 'Create Account →'
@@ -585,7 +578,7 @@ function renderVerify(app, email) {
     }
 }
 
-// ===== VERIFY CODE =====
+// ===== VERIFY CODE (used for login "send code" flow) =====
 window.handleVerifyCode = async function(email) {
     let token = ''
     for (let i = 1; i <= 6; i++) token += document.getElementById(`c${i}`)?.value || ''
@@ -597,18 +590,6 @@ window.handleVerifyCode = async function(email) {
     btn.disabled = true
     try {
         await window.verifyCode(email, token)
-        // If this was a signup (pending profile), set password + update metadata
-        if (window._pendingProfile) {
-            try {
-                const p = { ...window._pendingProfile }
-                const pw = p.password
-                delete p.password
-                delete p.email
-                await window.updateProfile(p)
-                if (pw) { try { await window.setPassword(pw) } catch {} }
-            } catch {}
-            delete window._pendingProfile
-        }
         navigate('home')
     } catch (e) {
         err.textContent = e.message || 'Invalid code.'

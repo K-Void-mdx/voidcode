@@ -16,6 +16,7 @@ if (!init()) setTimeout(() => init() || setTimeout(() => init(), 500), 300)
 window.currentUser = null
 
 // STEP 1: Create account with email + password (stores profile data in metadata)
+// With "Confirm email" OFF, user is auto-logged in after signup
 window.signUpWithEmail = async function(email, password, profile) {
     if (!_supabase) throw new Error('Connecting...')
     const { data, error } = await _supabase.auth.signUp({
@@ -24,6 +25,9 @@ window.signUpWithEmail = async function(email, password, profile) {
         options: { data: profile }
     })
     if (error) throw error
+    _user = data.user
+    window.currentUser = _user
+    updateUI()
     return data
 }
 
