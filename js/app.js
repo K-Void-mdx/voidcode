@@ -36,8 +36,9 @@ function updateGlobalProgress() {
 }
 
 function navigate(page, data) {
-    window._navData = data
-    window.location.hash = page
+    let hash = page
+    if (data !== undefined && data !== null) hash += '/' + data
+    window.location.hash = hash
 }
 window.addEventListener('hashchange', render)
 window.addEventListener('load', () => {
