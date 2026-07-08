@@ -3,6 +3,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 let _supabase = null
 let _user = null
+let _pendingEmail = null
 
 function loadSupabaseSDK() {
     if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
@@ -11,27 +12,31 @@ function loadSupabaseSDK() {
     }
     return false
 }
-
 function tryInit() {
-    if (!loadSupabaseSDK()) {
-        setTimeout(tryInit, 300)
-    }
+    if (!loadSupabaseSDK()) setTimeout(tryInit, 300)
 }
 tryInit()
 
-// expose everything on window
-window.currentUser = _user
+window.currentUser = null
 
-window.signUp = async function(email, password) {
-    if (!_supabase) throw new Error('Supabase SDK still loading, try again')
-    const { data, error } = await _supabase.auth.signUp({ email, password })
+window.sendOTP = async function(email) {
+    if (!_supabase) throw new Error('Supabase not ready')
+    _pendingEmail = email
+    const { data, error } = await _supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: true }
+    })
     if (error) throw error
     return data
 }
 
-window.signIn = async function(email, password) {
-    if (!_supabase) throw new Error('Supabase SDK still loading, try again')
-    const { data, error } = await _supabase.auth.signInWithPassword({ email, password })
+window.verifyOTP = async function(email, token) {
+    if (!_supabase) throw new Error('Supabase not ready')
+    const { data, error } = await _supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'email'
+    })
     if (error) throw error
     _user = data.user
     window.currentUser = _user
@@ -40,7 +45,7 @@ window.signIn = async function(email, password) {
 }
 
 window.signInWithGoogle = async function() {
-    if (!_supabase) throw new Error('Supabase SDK still loading, try again')
+    if (!_supabase) throw new Error('Supabase not ready')
     const { data, error } = await _supabase.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo: window.location.origin + window.location.pathname }
@@ -62,8 +67,10 @@ async function checkUser() {
     if (!_supabase) { setTimeout(checkUser, 500); return }
     try {
         const { data: { user } } = await _supabase.auth.getUser()
-        _user = user
-        window.currentUser = user
+        if (user) {
+            _user = user
+            window.currentUser = user
+        }
     } catch {}
     updateAuthUI()
 }

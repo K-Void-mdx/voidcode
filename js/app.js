@@ -59,7 +59,7 @@ function render() {
         case 'progress': renderProgress(app); break
         case 'about': renderAbout(app); break
         case 'login': renderLogin(app); break
-        case 'signup': renderSignup(app); break
+        case 'verify': renderVerify(app, params[0]); break
         default: renderHome(app)
     }
     updateGlobalProgress()
@@ -80,7 +80,7 @@ function renderHome(app) {
         <div class="stat-item"><div class="stat-number">${stats.total}</div><div class="stat-label">Lessons</div></div>
         <div class="stat-item"><div class="stat-number">${stats.done}</div><div class="stat-label">Completed</div></div>
       </div>
-      ${!window.currentUser ? '<p style="margin-top:1.5rem"><a onclick="navigate(\'signup\')" style="color:var(--accent);cursor:pointer;text-decoration:underline">Sign up</a> to save your progress across devices</p>' : ''}
+      ${!window.currentUser ? '<p style="margin-top:1.5rem"><a onclick="navigate(\'login\')" style="color:var(--accent);cursor:pointer;text-decoration:underline">Sign up / Login</a> to save your progress</p>' : ''}
     </div>
     <h2 class="section-title">Popular Courses</h2>
     <div class="course-grid">${COURSES.slice(0,3).map(c => courseCardHTML(c)).join('')}</div>
@@ -278,19 +278,16 @@ function renderLogin(app) {
     app.innerHTML = `
     <div class="page" style="max-width:400px;margin:2rem auto">
       <div style="text-align:center;margin-bottom:1.5rem">
-        <h1 style="font-size:1.5rem">Welcome Back</h1>
-        <p style="color:var(--text-dim);font-size:0.9rem">Log in to continue your progress</p>
+        <div style="font-size:2rem;margin-bottom:0.5rem">◇</div>
+        <h1 style="font-size:1.5rem">K-VOID Programming Hub</h1>
+        <p style="color:var(--text-dim);font-size:0.9rem">Enter your email to get started</p>
       </div>
-      <form id="loginForm" onsubmit="handleLogin(event)" style="display:flex;flex-direction:column;gap:1rem">
+      <div id="authBox" style="display:flex;flex-direction:column;gap:1rem">
         <div>
-          <label style="display:block;font-size:0.85rem;color:var(--text-dim);margin-bottom:0.3rem">Email</label>
-          <input type="email" id="loginEmail" required style="width:100%;padding:0.8rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem">
+          <label style="display:block;font-size:0.85rem;color:var(--text-dim);margin-bottom:0.3rem">Email address</label>
+          <input type="email" id="authEmail" placeholder="you@example.com" style="width:100%;padding:0.8rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem">
         </div>
-        <div>
-          <label style="display:block;font-size:0.85rem;color:var(--text-dim);margin-bottom:0.3rem">Password</label>
-          <input type="password" id="loginPassword" required style="width:100%;padding:0.8rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem">
-        </div>
-        <button type="submit" style="padding:0.8rem;background:var(--primary);border:none;border-radius:8px;color:white;font-size:1rem;font-weight:600;cursor:pointer">Log In</button>
+        <button id="sendCodeBtn" onclick="handleSendCode()" style="padding:0.8rem;background:var(--primary);border:none;border-radius:8px;color:white;font-size:1rem;font-weight:600;cursor:pointer">Send Code →</button>
         <div style="position:relative;text-align:center">
           <span style="background:var(--bg);padding:0 0.8rem;color:var(--text-dark);font-size:0.8rem;position:relative;z-index:1">or</span>
           <div style="border-top:1px solid var(--border);margin-top:-0.6rem"></div>
@@ -298,82 +295,104 @@ function renderLogin(app) {
         <button type="button" onclick="handleGoogleLogin()" style="padding:0.8rem;background:white;border:none;border-radius:8px;color:#333;font-size:1rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem">
           <span style="font-size:1.2rem">G</span> Continue with Google
         </button>
-        <p style="text-align:center;color:var(--text-dim);font-size:0.85rem">No account? <a onclick="navigate('signup')" style="color:var(--accent);cursor:pointer;text-decoration:underline">Sign up</a></p>
-      </form>
-      <div id="loginError" style="color:var(--danger);font-size:0.85rem;text-align:center;margin-top:0.5rem"></div>
+      </div>
+      <div id="authError" style="color:var(--danger);font-size:0.85rem;text-align:center;margin-top:0.5rem"></div>
     </div>`
+    const el = document.getElementById('authEmail')
+    if (el) setTimeout(() => el.focus(), 100)
 }
 
-function renderSignup(app) {
+function renderVerify(app, email) {
+    if (!email) { navigate('login'); return }
+    const decoded = decodeURIComponent(email)
     app.innerHTML = `
     <div class="page" style="max-width:400px;margin:2rem auto">
       <div style="text-align:center;margin-bottom:1.5rem">
-        <h1 style="font-size:1.5rem">Join K-VOID</h1>
-        <p style="color:var(--text-dim);font-size:0.9rem">Free account. Save your progress forever.</p>
+        <div style="font-size:2rem;margin-bottom:0.5rem">✉️</div>
+        <h1 style="font-size:1.3rem">Check your email</h1>
+        <p style="color:var(--text-dim);font-size:0.9rem">We sent a 6-digit code to</p>
+        <p style="color:var(--text);font-weight:600;font-size:0.95rem">${decoded}</p>
       </div>
-      <form id="signupForm" onsubmit="handleSignup(event)" style="display:flex;flex-direction:column;gap:1rem">
+      <div style="display:flex;flex-direction:column;gap:1rem">
         <div>
-          <label style="display:block;font-size:0.85rem;color:var(--text-dim);margin-bottom:0.3rem">Email</label>
-          <input type="email" id="signupEmail" required style="width:100%;padding:0.8rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem">
+          <label style="display:block;font-size:0.85rem;color:var(--text-dim);margin-bottom:0.5rem;text-align:center">Enter verification code</label>
+          <div style="display:flex;gap:0.5rem;justify-content:center" id="codeInputs">
+            ${[1,2,3,4,5,6].map(i => `<input type="text" maxlength="1" id="c${i}" class="code-digit" style="width:44px;height:52px;text-align:center;font-size:1.4rem;font-weight:700;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text)">`).join('')}
+          </div>
         </div>
-        <div>
-          <label style="display:block;font-size:0.85rem;color:var(--text-dim);margin-bottom:0.3rem">Password (min 6 chars)</label>
-          <input type="password" id="signupPassword" required minlength="6" style="width:100%;padding:0.8rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem">
-        </div>
-        <button type="submit" style="padding:0.8rem;background:var(--accent);border:none;border-radius:8px;color:#000;font-size:1rem;font-weight:600;cursor:pointer">Create Account</button>
-        <div style="position:relative;text-align:center">
-          <span style="background:var(--bg);padding:0 0.8rem;color:var(--text-dark);font-size:0.8rem;position:relative;z-index:1">or</span>
-          <div style="border-top:1px solid var(--border);margin-top:-0.6rem"></div>
-        </div>
-        <button type="button" onclick="handleGoogleLogin()" style="padding:0.8rem;background:white;border:none;border-radius:8px;color:#333;font-size:1rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem">
-          <span style="font-size:1.2rem">G</span> Sign up with Google
-        </button>
-        <p style="text-align:center;color:var(--text-dim);font-size:0.85rem">Already have one? <a onclick="navigate('login')" style="color:var(--primary);cursor:pointer;text-decoration:underline">Log in</a></p>
-      </form>
-      <div id="signupError" style="color:var(--danger);font-size:0.85rem;text-align:center;margin-top:0.5rem"></div>
-      <div id="signupSuccess" style="color:var(--accent);font-size:0.85rem;text-align:center;margin-top:0.5rem"></div>
+        <button id="verifyBtn" onclick="handleVerify('${decoded}')" style="padding:0.8rem;background:var(--primary);border:none;border-radius:8px;color:white;font-size:1rem;font-weight:600;cursor:pointer">Verify & Login →</button>
+        <button onclick="navigate('login')" style="padding:0.5rem;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-size:0.85rem;cursor:pointer">Use different email</button>
+      </div>
+      <div id="verifyError" style="color:var(--danger);font-size:0.85rem;text-align:center;margin-top:0.5rem"></div>
     </div>`
+    setTimeout(() => {
+        const c1 = document.getElementById('c1')
+        if (c1) c1.focus()
+    }, 100)
+    for (let i = 1; i <= 6; i++) {
+        const el = document.getElementById(`c${i}`)
+        if (!el) continue
+        el.addEventListener('input', () => {
+            if (el.value && i < 6) document.getElementById(`c${i+1}`)?.focus()
+        })
+        el.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !el.value && i > 1)
+                document.getElementById(`c${i-1}`)?.focus()
+            if (e.key === 'Enter') handleVerify(decoded)
+        })
+    }
 }
 
-async function handleLogin(e) {
-    e.preventDefault()
-    const email = document.getElementById('loginEmail').value
-    const password = document.getElementById('loginPassword').value
-    const errEl = document.getElementById('loginError')
+async function handleSendCode() {
+    const email = document.getElementById('authEmail').value.trim()
+    const errEl = document.getElementById('authError')
+    const btn = document.getElementById('sendCodeBtn')
     errEl.textContent = ''
+    if (!email || !email.includes('@')) {
+        errEl.textContent = 'Please enter a valid email.'
+        return
+    }
+    btn.textContent = 'Sending...'
+    btn.disabled = true
     try {
-        await window.signIn(email, password)
+        await window.sendOTP(email)
+        navigate('verify', encodeURIComponent(email))
+    } catch (err) {
+        errEl.textContent = err.message || 'Failed to send code.'
+        btn.textContent = 'Send Code →'
+        btn.disabled = false
+    }
+}
+
+async function handleVerify(email) {
+    let token = ''
+    for (let i = 1; i <= 6; i++) {
+        token += document.getElementById(`c${i}`)?.value || ''
+    }
+    const errEl = document.getElementById('verifyError')
+    const btn = document.getElementById('verifyBtn')
+    errEl.textContent = ''
+    if (token.length !== 6) {
+        errEl.textContent = 'Enter all 6 digits.'
+        return
+    }
+    btn.textContent = 'Verifying...'
+    btn.disabled = true
+    try {
+        await window.verifyOTP(email, token)
         navigate('home')
     } catch (err) {
-        errEl.textContent = err.message || 'Login failed. Try again.'
+        errEl.textContent = err.message || 'Invalid code. Try again.'
+        btn.textContent = 'Verify & Login →'
+        btn.disabled = false
     }
 }
 
 async function handleGoogleLogin() {
     try {
         await window.signInWithGoogle()
-    } catch (err) {
-        const errEl = document.getElementById('loginError') || document.getElementById('signupError')
-        if (errEl) errEl.textContent = 'Google login failed. Make sure it\'s configured in Supabase.'
-    }
-}
-
-async function handleSignup(e) {
-    e.preventDefault()
-    const email = document.getElementById('signupEmail').value
-    const password = document.getElementById('signupPassword').value
-    const errEl = document.getElementById('signupError')
-    const sucEl = document.getElementById('signupSuccess')
-    errEl.textContent = ''
-    sucEl.textContent = ''
-    try {
-        const data = await window.signUp(email, password)
-        if (data.user?.identities?.length === 0) {
-            errEl.textContent = 'This email is already registered. Try logging in.'
-        } else {
-            sucEl.textContent = '✅ Account created! Check your email for confirmation (or try logging in).'
-        }
-    } catch (err) {
-        errEl.textContent = err.message || 'Signup failed. Try again.'
+    } catch {
+        const el = document.getElementById('authError')
+        if (el) el.textContent = 'Google login not configured yet.'
     }
 }

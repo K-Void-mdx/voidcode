@@ -713,6 +713,13 @@ main {
     .lesson-nav button { width: 100%; }
 }
 
+/* CODE DIGIT INPUTS */
+.code-digit:focus {
+    border-color: var(--primary) !important;
+    outline: none;
+    box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
 /* ANIMATIONS */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
