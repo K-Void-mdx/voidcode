@@ -71,8 +71,22 @@ function toggleNav() { document.getElementById('navLinks').classList.toggle('sho
 // ===== HOME =====
 function renderHome(app) {
     const stats = getTotalStats()
+    const user = window.currentUser
+    const meta = user?.user_metadata || {}
+    const name = meta.first_name || meta.username || user?.email?.split('@')[0] || ''
+    const avatar = meta.avatar_url || ''
+    const gender = meta.gender || ''
     app.innerHTML = `
     <div class="page"><div class="hero">
+      ${user ? `
+        <div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1rem">
+          ${avatar ? `<img src="${avatar}" style="width:56px;height:56px;border-radius:50%;border:2px solid var(--primary)">` : `<div style="width:56px;height:56px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;color:white">${name.charAt(0).toUpperCase()}</div>`}
+          <div style="text-align:left">
+            <h2 style="font-size:1.1rem;font-weight:600">Welcome, ${name}! 👋</h2>
+            <p style="color:var(--text-dim);font-size:0.85rem">${stats.done}/${stats.total} lessons completed</p>
+          </div>
+        </div>
+      ` : ''}
       <h1>◇ K-VOID Programming Hub</h1>
       <p>Learn programming from scratch — free. Tiny lessons, immediate practice, real progress.</p>
       <button class="hero-cta" onclick="navigate('courses')">Start Learning →</button>
@@ -81,7 +95,7 @@ function renderHome(app) {
         <div class="stat-item"><div class="stat-number">${stats.total}</div><div class="stat-label">Lessons</div></div>
         <div class="stat-item"><div class="stat-number">${stats.done}</div><div class="stat-label">Completed</div></div>
       </div>
-      ${!window.currentUser ? '<p style="margin-top:1.5rem"><a onclick="navigate(\'login\')" style="color:var(--accent);cursor:pointer;text-decoration:underline">Sign up / Login</a> to save your progress</p>' : ''}
+      ${!user ? '<p style="margin-top:1.5rem"><a onclick="navigate(\'login\')" style="color:var(--accent);cursor:pointer;text-decoration:underline">Sign up / Login</a> to save your progress</p>' : ''}
     </div>
     <h2 class="section-title">Popular Courses</h2>
     <div class="course-grid">${COURSES.slice(0,3).map(c => courseCardHTML(c)).join('')}</div>
