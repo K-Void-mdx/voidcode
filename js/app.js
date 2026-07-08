@@ -80,7 +80,7 @@ function renderHome(app) {
         <div class="stat-item"><div class="stat-number">${stats.total}</div><div class="stat-label">Lessons</div></div>
         <div class="stat-item"><div class="stat-number">${stats.done}</div><div class="stat-label">Completed</div></div>
       </div>
-      ${!currentUser ? '<p style="margin-top:1.5rem"><a onclick="navigate(\'signup\')" style="color:var(--accent);cursor:pointer;text-decoration:underline">Sign up</a> to save your progress across devices</p>' : ''}
+      ${!window.currentUser ? '<p style="margin-top:1.5rem"><a onclick="navigate(\'signup\')" style="color:var(--accent);cursor:pointer;text-decoration:underline">Sign up</a> to save your progress across devices</p>' : ''}
     </div>
     <h2 class="section-title">Popular Courses</h2>
     <div class="course-grid">${COURSES.slice(0,3).map(c => courseCardHTML(c)).join('')}</div>
@@ -342,7 +342,7 @@ async function handleLogin(e) {
     const errEl = document.getElementById('loginError')
     errEl.textContent = ''
     try {
-        await signIn(email, password)
+        await window.signIn(email, password)
         navigate('home')
     } catch (err) {
         errEl.textContent = err.message || 'Login failed. Try again.'
@@ -351,7 +351,7 @@ async function handleLogin(e) {
 
 async function handleGoogleLogin() {
     try {
-        await signInWithGoogle()
+        await window.signInWithGoogle()
     } catch (err) {
         const errEl = document.getElementById('loginError') || document.getElementById('signupError')
         if (errEl) errEl.textContent = 'Google login failed. Make sure it\'s configured in Supabase.'
@@ -367,7 +367,7 @@ async function handleSignup(e) {
     errEl.textContent = ''
     sucEl.textContent = ''
     try {
-        const data = await signUp(email, password)
+        const data = await window.signUp(email, password)
         if (data.user?.identities?.length === 0) {
             errEl.textContent = 'This email is already registered. Try logging in.'
         } else {
