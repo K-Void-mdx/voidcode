@@ -654,8 +654,64 @@ ul, ol { list-style: none; }
 .placeholder-page p { color: var(--text-secondary); font-size: 0.9rem; }
 
 /* ============================================================
-   NOTIFICATIONS / TOASTS
-   ============================================================ */
+    XP BAR
+    ============================================================ */
+.xp-bar-container { margin-bottom: 2rem; }
+.xp-bar-label { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; }
+.xp-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.xp-bar-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 4px; transition: width 0.5s ease; }
+
+/* ============================================================
+    AI CHAT
+    ============================================================ */
+.ai-chat {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1rem;
+    max-height: 60vh; overflow-y: auto; margin-bottom: 1rem;
+    display: flex; flex-direction: column; gap: 1rem;
+}
+.ai-message { display: flex; gap: 0.75rem; align-items: flex-start; }
+.ai-message.ai-user { justify-content: flex-end; }
+.ai-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 0.9rem; flex-shrink: 0;
+}
+.ai-bubble {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 0.75rem 1rem;
+    max-width: 80%; font-size: 0.9rem; line-height: 1.6;
+}
+.ai-user-bubble { background: var(--primary-subtle); border-color: var(--primary); }
+.ai-error { border-color: var(--danger); background: var(--danger-subtle); }
+.ai-bubble p { margin-bottom: 0.25rem; }
+.ai-bubble p:last-child { margin-bottom: 0; }
+.ai-input-row { display: flex; gap: 0.5rem; }
+.ai-input-row .form-input { flex: 1; }
+
+/* ============================================================
+    CERTIFICATES
+    ============================================================ */
+.cert-grid { display: flex; flex-direction: column; gap: 0.75rem; }
+.cert-card {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1rem 1.2rem; background: var(--bg-card);
+    border: 1px solid var(--border); border-radius: var(--radius-lg);
+}
+.cert-icon { font-size: 2rem; }
+.cert-info { flex: 1; }
+.cert-info h3 { font-size: 1rem; font-weight: 600; }
+.cert-info p { font-size: 0.85rem; color: var(--text-secondary); }
+.cert-badge {
+    padding: 0.25rem 0.75rem; border-radius: 20px;
+    background: var(--accent-subtle); color: var(--accent);
+    font-size: 0.8rem; font-weight: 600;
+}
+
+/* ============================================================
+    NOTIFICATIONS / TOASTS
+    ============================================================ */
 #toast-container {
     position: fixed; top: 1rem; right: 1rem; z-index: 999;
     display: flex; flex-direction: column; gap: 0.5rem;
@@ -680,6 +736,31 @@ ul, ol { list-style: none; }
 /* ============================================================
    ANIMATIONS
    ============================================================ */
+/* Search dropdown */
+.search-dropdown {
+    position: absolute; top: 100%; left: 0; right: 0;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); margin-top: 4px;
+    box-shadow: var(--shadow-lg); z-index: 200;
+    max-height: 360px; overflow-y: auto;
+    animation: fadeIn 0.15s ease;
+}
+.search-result-item {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.6rem 0.75rem; cursor: pointer; transition: background 0.1s;
+}
+.search-result-item:hover { background: var(--bg-hover); }
+.search-result-item:not(:last-child) { border-bottom: 1px solid var(--border); }
+.search-result-icon {
+    width: 36px; height: 36px; border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.sr-icon-text { font-size: 0.9rem; font-weight: 800; }
+.search-result-info { flex: 1; min-width: 0; }
+.search-result-title { font-size: 0.85rem; font-weight: 600; }
+.search-result-meta { font-size: 0.75rem; color: var(--text-dim); }
+
 @keyframes fadeUp {
     from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }

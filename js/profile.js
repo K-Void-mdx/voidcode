@@ -1,26 +1,10 @@
-const DATABASE_ID = 'main'
-const PROFILES_COLLECTION_ID = 'profiles'
-const AVATARS_BUCKET_ID = 'avatars'
-
-let _databases = null
-let _storage = null
-
-function ensureServices() {
-    if (typeof Appwrite === 'undefined') return false
-    if (!_databases) {
-        const { Databases, Storage } = Appwrite
-        _databases = new Databases(_client)
-        _storage = new Storage(_client)
-    }
-    return true
-}
-
 async function createProfile(userId, data) {
-    ensureServices()
+    initDb()
+    const db = getDb()
     const { ID } = Appwrite
-    const doc = await _databases.createDocument(
-        DATABASE_ID,
-        PROFILES_COLLECTION_ID,
+    const doc = await db.createDocument(
+        CONFIG.database.id,
+        CONFIG.database.collections.profiles,
         ID.unique(),
         { userId, ...data }
     )
@@ -28,22 +12,24 @@ async function createProfile(userId, data) {
 }
 
 async function getProfile(userId) {
-    ensureServices()
+    if (!initDb()) return null
     try {
-        const docs = await _databases.listDocuments(
-            DATABASE_ID,
-            PROFILES_COLLECTION_ID,
-            [Appwrite.Query.equal('userId', userId)]
+        const Query = getQuery()
+        const docs = await getDb().listDocuments(
+            CONFIG.database.id,
+            CONFIG.database.collections.profiles,
+            [Query.equal('userId', userId)]
         )
         return docs.documents[0] || null
     } catch { return null }
 }
 
 async function updateProfile(docId, data) {
-    ensureServices()
-    const doc = await _databases.updateDocument(
-        DATABASE_ID,
-        PROFILES_COLLECTION_ID,
+    initDb()
+    const db = getDb()
+    const doc = await db.updateDocument(
+        CONFIG.database.id,
+        CONFIG.database.collections.profiles,
         docId,
         data
     )
@@ -51,21 +37,22 @@ async function updateProfile(docId, data) {
 }
 
 async function uploadAvatar(file) {
-    ensureServices()
+    initDb()
+    const storage = getStorage()
     const { ID } = Appwrite
-    const result = await _storage.createFile(
-        AVATARS_BUCKET_ID,
+    const result = await storage.createFile(
+        CONFIG.storage.avatarsBucketId,
         ID.unique(),
         file
     )
     return result.$id
 }
 
-function getAvatarUrl(fileId) {
-    if (!_storage) return ''
-    return _storage.getFileView(AVATARS_BUCKET_ID, fileId)
-}
-
-function getProfileDefaultAvatar(gender, seed) {
-    return getAvatarUrl(gender, seed)
+function getAvatarFileUrl(fileId) {
+    try {
+        const storage = getStorage()
+        return storage.getFileView(CONFIG.storage.avatarsBucketId, fileId).toString()
+    } catch {
+        return ''
+    }
 }

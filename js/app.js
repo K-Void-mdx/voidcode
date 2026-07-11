@@ -1,95 +1,61 @@
-/* ============================================================
-   K-VOID Programming Hub — Application
-   ============================================================ */
-
-// ----- STATE -----
 let _user = null
 let _profile = null
 let _profileDocId = null
-let _pendingAvatarFile = null
 
-// ----- LOCAL PROGRESS (temporary until backend) -----
-const PROGRESS_KEY = 'kvoid_progress'
-
-function getProgress() {
-    try { return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {} }
-    catch { return {} }
-}
-function saveProgress(p) { localStorage.setItem(PROGRESS_KEY, JSON.stringify(p)) }
-
-function getCourseProgress(courseId) {
-    const course = COURSES.find(c => c.id === courseId)
-    if (!course) return 0
-    const p = getProgress()
-    return Math.round(((p[courseId] || []).length / course.lessons.length) * 100)
-}
-
-function getTotalStats() {
-    const p = getProgress()
-    let total = 0, done = 0
-    COURSES.forEach(c => { total += c.lessons.length; done += (p[c.id] || []).length })
-    return { total, done, courses: COURSES.length }
-}
-
-function markLessonComplete(courseId, lessonId) {
-    const p = getProgress()
-    if (!p[courseId]) p[courseId] = []
-    if (!p[courseId].includes(lessonId)) { p[courseId].push(lessonId); saveProgress(p) }
-}
-
-function isLessonComplete(courseId, lessonId) {
-    const p = getProgress()
-    return p[courseId] && p[courseId].includes(lessonId)
-}
-
-// ============================================================
-// INIT
-// ============================================================
 async function init() {
-    await initAppwrite()
-
-    // Check for verification or password reset params from email links
-    const params = new URLSearchParams(window.location.search)
-    const userId = params.get('userId')
-    const secret = params.get('secret')
-
-    if (userId && secret) {
-        try {
-            await completeVerification(userId, secret)
-            window.history.replaceState({}, '', window.location.pathname)
-            showToast('Email verified! Log in to continue.', 'success')
-            navigate('login')
+    try {
+        const ok = await initAppwrite()
+        if (!ok) {
+            const el = $('app')
+            if (el) el.innerHTML = '<div class="auth-page"><div class="auth-card" style="text-align:center"><div class="auth-header"><h1>Connection Error</h1><p>Could not connect to the server. Please check your internet and try again.</p></div><button class="btn btn-primary" onclick="location.reload()">Retry</button></div></div>'
             return
-        } catch (e) {
-            try {
-                await completePasswordReset(userId, secret, '')
-                window.history.replaceState({}, '', window.location.pathname)
-                navigate('forgot-confirm', userId + '/' + secret)
-                return
-            } catch {}
         }
-    }
 
-    // Restore session
-    _user = await getCurrentUser()
-    if (_user) {
-        const p = await getProfile(_user.$id)
-        if (p) { _profile = p; _profileDocId = p.$id }
-    }
+        initDb()
 
-    handleRoute()
+        const params = new URLSearchParams(window.location.search)
+        const userId = params.get('userId')
+        const secret = params.get('secret')
+
+        if (userId && secret) {
+            try {
+                await completeVerification(userId, secret)
+                window.history.replaceState({}, '', window.location.pathname)
+                showToast('Email verified! Log in to continue.', 'success')
+                navigate('login')
+                return
+            } catch (e) {
+                try {
+                    await completePasswordReset(userId, secret, '')
+                    window.history.replaceState({}, '', window.location.pathname)
+                    navigate('forgot-confirm', userId + '/' + secret)
+                    return
+                } catch {}
+            }
+        }
+
+        _user = await getCurrentUser()
+        if (_user) {
+            const p = await getProfile(_user.$id)
+            if (p) { _profile = p; _profileDocId = p.$id }
+            await migrateLocalProgress()
+            await migrateLocalBookmarks()
+        }
+
+        await handleRoute()
+    } catch (e) {
+        console.error('Init failed:', e)
+        showToast('Something went wrong loading the app.', 'error')
+    }
 }
 
-// ============================================================
-// ROUTER
-// ============================================================
 function navigate(page, data) {
     let hash = page || 'home'
     if (data !== undefined && data !== null) hash += '/' + data
     window.location.hash = hash
 }
 
-function handleRoute() {
+async function handleRoute() {
     const hash = window.location.hash.slice(1) || 'dashboard'
     const parts = hash.split('/')
     const page = parts[0]
@@ -108,41 +74,59 @@ function handleRoute() {
 
     switch (page) {
         case 'home':
-        case 'landing': renderLanding(app); break
+        case 'landing': await renderLanding(app); break
         case 'login': renderLogin(app); break
         case 'signup': renderSignup(app); break
         case 'forgot': renderForgotPassword(app); break
         case 'forgot-confirm': renderForgotPasswordConfirm(app, p1, p2); break
         case 'verify-email': renderVerifyEmail(app); break
         case 'complete-profile': renderCompleteProfile(app); break
-        case 'dashboard': renderDashboard(app); break
-        case 'courses': renderCourses(app); break
-        case 'course': renderCourseDetail(app, p1); break
-        case 'lesson': renderLessonView(app, p1, p2); break
-        case 'profile': renderProfile(app); break
+        case 'dashboard': await renderDashboard(app); break
+        case 'courses': await renderCourses(app); break
+        case 'course': await renderCourseDetail(app, p1); break
+        case 'lesson': await renderLessonView(app, p1, p2); break
+        case 'profile': await renderProfile(app); break
         case 'profile-edit': renderProfileEdit(app); break
-        case 'ai-tutor': renderPlaceholder(app, '🤖', 'AI Tutor', 'Get programming help, code reviews, and learning recommendations. Coming soon.'); break
-        case 'certificates': renderPlaceholder(app, '🏆', 'Certificates', 'Your earned certificates and achievements. Coming soon.'); break
-        case 'bookmarks': renderPlaceholder(app, '🔖', 'Bookmarks', 'Save courses and lessons for later. Coming soon.'); break
+        case 'ai-tutor': renderAiTutor(app); break
+        case 'certificates': await renderCertificates(app); break
+        case 'bookmarks': await renderBookmarks(app); break
         case 'settings': renderSettings(app); break
+        case 'search': await renderSearchResults(app, p1); break
         case 'logout': handleLogout(); break
         default:
-            if (_user) renderDashboard(app)
-            else renderLanding(app)
+            renderNotFound(app)
     }
 }
 
-window.addEventListener('hashchange', handleRoute)
+window.addEventListener('hashchange', () => handleRoute())
 
-// ============================================================
-// PAGE FRAME
-// ============================================================
 function renderFrame(app, content, sidebar) {
+    app.innerHTML = '<div class="app-layout">' + renderTopbar() + renderSidebar(sidebar) + '<main class="main-content">' + content + '</main></div>'
+}
+
+function renderNotFound(app) {
     if (_user) {
-        app.innerHTML = '<div class="app-layout">' + renderTopbar() + renderSidebar(sidebar) + '<main class="main-content">' + content + '</main></div>'
+        renderFrame(app, '<div class="placeholder-page"><div class="icon" style="font-size:4rem">🔮</div><h2>Page Not Found</h2><p>The page you\'re looking for doesn\'t exist or has moved.</p><button class="btn btn-primary" style="margin-top:1rem" onclick="navigate(\'dashboard\')">Go to Dashboard</button></div>', '')
     } else {
-        app.innerHTML = '<div class="landing-page">' + content + '</div>'
+        app.innerHTML = '<div class="landing-page"><div class="placeholder-page" style="padding:5rem 1.5rem"><div class="icon" style="font-size:4rem">🔮</div><h2>Page Not Found</h2><p>The page you\'re looking for doesn\'t exist.</p><button class="btn btn-primary" style="margin-top:1rem" onclick="navigate(\'home\')">Go Home</button></div></div>'
     }
+}
+
+async function renderSearchResults(app, query) {
+    if (!query) { navigate('courses'); return }
+    const q = query.toLowerCase()
+    const courses = await fetchCourses()
+    const results = courses.filter(c =>
+        c.title.toLowerCase().includes(q) ||
+        c.desc.toLowerCase().includes(q) ||
+        c.category.toLowerCase().includes(q) ||
+        (c.lessons || []).some(l => l.title.toLowerCase().includes(q))
+    )
+    const progressMap = await getCourseProgressAll(_user?.$id)
+    const grid = results.length
+        ? (await Promise.all(results.map(c => courseCardMini(c, progressMap[c.id])))).join('')
+        : '<p style="color:var(--text-secondary);text-align:center;padding:2rem">No courses found for "' + escapeHtml(query) + '"</p>'
+    renderFrame(app, '<div class="section-header"><h2>🔍 Search Results for "' + escapeHtml(query) + '"</h2></div><p style="color:var(--text-secondary);margin-bottom:1.5rem">' + results.length + ' course' + (results.length !== 1 ? 's' : '') + ' found</p><div class="course-grid">' + grid + '</div>', 'courses')
 }
 
 function renderTopbar() {
@@ -183,11 +167,9 @@ function closeSidebar() {
     if (o) o.classList.remove('open')
 }
 
-// ============================================================
-// LANDING PAGE
-// ============================================================
-function renderLanding(app) {
-    const allLangs = COURSES.map(c =>
+async function renderLanding(app) {
+    const courses = await fetchCourses()
+    const allLangs = courses.map(c =>
         '<div class="lang-item"><span class="lang-item-icon">' + c.icon + '</span><span class="lang-item-name">' + c.title + '</span></div>'
     ).join('')
 
@@ -219,9 +201,9 @@ function renderLanding(app) {
         '<div class="faq-item"><button class="faq-question" onclick="toggleFaq(' + i + ')">' + f.q + '<span class="arrow">▾</span></button><div class="faq-answer" id="faq' + i + '">' + f.a + '</div></div>'
     ).join('')
 
-    const stats = getTotalStats()
+    const stats = await getTotalStats()
 
-    app.innerHTML = '<div class="landing-page"><header class="landing-topbar"><div class="topbar-logo" onclick="navigate(\'home\')"><span class="topbar-logo-icon">◇</span><span class="topbar-logo-text">K-VOID</span></div><nav class="landing-nav"><a onclick="navigate(\'login\')">Log In</a><button class="btn btn-primary btn-sm" onclick="navigate(\'signup\')">Sign Up Free</button></nav></header><section class="lp-hero"><h1>Learn to Code.<br>Completely Free.</h1><p>Master 12+ programming languages with bite-sized lessons you can do on your phone. No credit card. No excuses.</p><div class="lp-hero-actions"><button class="btn btn-primary btn-lg" onclick="navigate(\'signup\')">Start Learning Free →</button><button class="btn btn-secondary btn-lg" onclick="document.getElementById(\'lp-courses\').scrollIntoView({behavior:\'smooth\'})">View Courses</button></div></section><div class="lp-stats"><div class="lp-stat"><div class="lp-stat-num">' + stats.courses + '</div><div class="lp-stat-label">Courses</div></div><div class="lp-stat"><div class="lp-stat-num">' + stats.total + '</div><div class="lp-stat-label">Lessons</div></div><div class="lp-stat"><div class="lp-stat-num">12+</div><div class="lp-stat-label">Languages</div></div><div class="lp-stat"><div class="lp-stat-num">100%</div><div class="lp-stat-label">Free</div></div></div><section class="lp-section" id="lp-courses"><h2 class="lp-section-title">🚀 Supported Languages</h2><p class="lp-section-subtitle">Each language comes with structured lessons, practice exercises, and quizzes.</p><div class="lang-grid">' + allLangs + '</div></section><section class="lp-section"><h2 class="lp-section-title">🎯 Why Learn Here</h2><p class="lp-section-subtitle">Built differently. Built for you.</p><div class="features-grid">' + allFeatures + '</div></section><section class="lp-section"><h2 class="lp-section-title">🧭 Your Learning Roadmap</h2><p class="lp-section-subtitle">From complete beginner to confident programmer.</p><div class="roadmap">' + roadmap + '</div></section><section class="lp-section"><h2 class="lp-section-title">💬 What Learners Say</h2><p class="lp-section-subtitle">Join thousands learning with K-VOID.</p><div class="testimonials-grid"><div class="testimonial-card"><p class="quote">"I started with zero coding experience. The bite-sized lessons made it easy to learn on my bus ride to school."</p><div class="author"><div class="avatar avatar-sm avatar-initials" style="font-size:0.75rem;">TC</div><span class="author-name">Tunde C.</span></div></div><div class="testimonial-card"><p class="quote">"Finally a platform that works on my Android phone. No laptop needed. The Termux exercises are perfect."</p><div class="author"><div class="avatar avatar-sm avatar-initials" style="font-size:0.75rem;">AM</div><span class="author-name">Aisha M.</span></div></div><div class="testimonial-card"><p class="quote">"I tried other platforms but they were too slow on my network. K-VOID loads instantly and the lessons are clear."</p><div class="author"><div class="avatar avatar-sm avatar-initials" style="font-size:0.75rem;">KO</div><span class="author-name">Kelechi O.</span></div></div></div></section><section class="lp-section"><h2 class="lp-section-title">❓ Frequently Asked Questions</h2><div class="faq-list">' + faq + '</div></section><footer class="lp-footer"><div class="lp-footer-links"><a onclick="navigate(\'home\')">Home</a><a onclick="navigate(\'login\')">Log In</a><a onclick="navigate(\'signup\')">Sign Up</a></div><p>◇ K-VOID Programming Hub — Learn to Code, For Free</p><p style="margin-top:0.3rem;font-size:0.8rem">Built for learners everywhere</p></footer></div>'
+    app.innerHTML = '<div class="landing-page"><header class="landing-topbar"><div class="topbar-logo" onclick="navigate(\'home\')"><span class="topbar-logo-icon">◇</span><span class="topbar-logo-text">K-VOID</span></div><nav class="landing-nav"><a onclick="navigate(\'login\')">Log In</a><button class="btn btn-primary btn-sm" onclick="navigate(\'signup\')">Sign Up Free</button></nav></header><section class="lp-hero"><h1>Learn to Code.<br>Completely Free.</h1><p>Master 12+ programming languages with bite-sized lessons you can do on your phone. No credit card. No excuses.</p><div class="lp-hero-actions"><button class="btn btn-primary btn-lg" onclick="navigate(\'signup\')">Start Learning Free →</button><button class="btn btn-secondary btn-lg" onclick="document.getElementById(\'lp-courses\').scrollIntoView({behavior:\'smooth\'})">View Courses</button></div></section><div class="lp-stats"><div class="lp-stat"><div class="lp-stat-num">' + stats.courses + '</div><div class="lp-stat-label">Courses</div></div><div class="lp-stat"><div class="lp-stat-num">' + stats.total + '</div><div class="lp-stat-label">Lessons</div></div><div class="lp-stat"><div class="lp-stat-num">12+</div><div class="lp-stat-label">Languages</div></div><div class="lp-stat"><div class="lp-stat-num">100%</div><div class="lp-stat-label">Free</div></div></div><section class="lp-section" id="lp-courses"><h2 class="lp-section-title">🚀 Supported Languages</h2><p class="lp-section-subtitle">Each language comes with structured lessons, practice exercises, and quizzes.</p><div class="lang-grid">' + allLangs + '</div></section><section class="lp-section"><h2 class="lp-section-title">🎯 Why Learn Here</h2><p class="lp-section-subtitle">Built differently. Built for you.</p><div class="features-grid">' + allFeatures + '</div></section><section class="lp-section"><h2 class="lp-section-title">🧭 Your Learning Roadmap</h2><p class="lp-section-subtitle">From complete beginner to confident programmer.</p><div class="roadmap">' + roadmap + '</div></section><section class="lp-section"><h2 class="lp-section-title">❓ FAQ</h2><div class="faq-list">' + faq + '</div></section><footer class="lp-footer"><p>© 2024 K-VOID Programming Hub. Learn to code. Completely free.</p></footer></div>'
 
     window.toggleFaq = function(i) {
         const a = $('faq' + i)
@@ -232,11 +214,8 @@ function renderLanding(app) {
     }
 }
 
-// ============================================================
-// LOGIN
-// ============================================================
 function renderLogin(app) {
-    app.innerHTML = '<div class="auth-page"><div class="auth-card"><div class="auth-header"><div class="brand">◇</div><h1>Welcome Back</h1><p>Log in to continue learning</p></div><form onsubmit="handleLogin(event)"><div class="form-group"><label class="form-label" for="loginEmail">Email</label><input class="form-input" id="loginEmail" type="email" required placeholder="you@example.com"></div><div class="form-group"><label class="form-label" for="loginPassword">Password</label><input class="form-input" id="loginPassword" type="password" required placeholder="Enter your password"></div><button class="btn btn-primary btn-block btn-lg" type="submit">Log In</button><div class="auth-divider"><span>or</span></div><button class="btn btn-secondary btn-block" type="button" onclick="handleSendCodeLogin()">Send code instead</button></form><div id="loginError" class="form-error" style="text-align:center;margin-top:0.5rem"></div><div class="auth-footer"><a onclick="navigate(\'forgot\')" style="font-size:0.85rem">Forgot password?</a></div><div class="auth-footer">New here? <a onclick="navigate(\'signup\')">Create an account</a></div></div></div>'
+    app.innerHTML = '<div class="auth-page"><div class="auth-card"><div class="auth-header"><div class="brand">◇</div><h1>Welcome Back</h1><p>Log in to continue learning</p></div><form onsubmit="handleLogin(event)"><div class="form-group"><label class="form-label" for="loginEmail">Email</label><input class="form-input" id="loginEmail" type="email" required placeholder="you@example.com"></div><div class="form-group"><label class="form-label" for="loginPassword">Password</label><input class="form-input" id="loginPassword" type="password" required placeholder="Enter your password"></div><button class="btn btn-primary btn-block btn-lg" type="submit" id="loginBtn">Log In</button></form><div id="loginError" class="form-error" style="text-align:center;margin-top:0.5rem"></div><div class="auth-footer" style="margin-top:0.5rem"><a onclick="navigate(\'forgot\')" style="font-size:0.85rem">Forgot password?</a></div><div class="auth-footer">New here? <a onclick="navigate(\'signup\')">Create an account</a></div></div></div>'
     setTimeout(() => $('loginEmail')?.focus(), 100)
 }
 
@@ -245,36 +224,42 @@ window.handleLogin = async function(e) {
     const email = $('loginEmail')?.value.trim()
     const pw = $('loginPassword')?.value
     const err = $('loginError')
+    const btn = $('loginBtn')
     if (!email || !pw) { if (err) err.textContent = 'Enter email and password.'; return }
+    btn.textContent = 'Logging in...'
+    btn.disabled = true
+    if (err) err.textContent = ''
     try {
         await logIn(email, pw)
         _user = await getCurrentUser()
+        if (_user) await updateStreak()
         _profile = await getProfile(_user.$id)
         if (_profile) _profileDocId = _profile.$id
+        await migrateLocalProgress()
+        await migrateLocalBookmarks()
         showToast('Welcome back!', 'success')
         navigate('dashboard')
     } catch (e) {
         if (err) err.textContent = e.message || 'Invalid email or password.'
+        btn.textContent = 'Log In'
+        btn.disabled = false
     }
 }
 
-window.handleSendCodeLogin = async function() {
+window.handleSendResetLink = async function() {
     const email = $('loginEmail')?.value.trim()
     const err = $('loginError')
     if (!email) { if (err) err.textContent = 'Enter your email first.'; return }
     try {
         await sendPasswordReset(email)
-        showToast('Reset link sent to your email!', 'success')
+        showToast('Password reset link sent to your email!', 'success')
     } catch (e) {
         if (err) err.textContent = e.message || 'Failed to send.'
     }
 }
 
-// ============================================================
-// SIGNUP
-// ============================================================
 function renderSignup(app) {
-    app.innerHTML = '<div class="auth-page"><div class="auth-card"><div class="auth-header"><div class="brand">◇</div><h1>Create Account</h1><p>Join K-VOID and start learning</p></div><form onsubmit="handleSignup(event)"><div class="form-group"><label class="form-label" for="suEmail">Email</label><input class="form-input" id="suEmail" type="email" required placeholder="you@example.com"></div><div class="form-group"><label class="form-label" for="suPassword">Password</label><input class="form-input" id="suPassword" type="password" required minlength="6" placeholder="At least 6 characters" oninput="updatePwStrength()"><div class="pw-strength"><div class="pw-strength-fill" id="pwBar"></div></div><span class="pw-label" id="pwLabel"></span></div><div class="form-group"><label class="form-label" for="suConfirm">Confirm Password</label><input class="form-input" id="suConfirm" type="password" required minlength="6" placeholder="Repeat your password" oninput="updatePwMatch()"><div class="pw-strength"><div class="pw-strength-fill" id="pwMatchBar"></div></div><span class="pw-label" id="pwMatchLabel"></span></div><button class="btn btn-primary btn-block btn-lg" type="submit" id="signupBtn">Create Account →</button></form><div id="signupError" class="form-error" style="text-align:center;margin-top:0.5rem"></div><div class="auth-footer">Already have an account? <a onclick="navigate(\'login\')">Log in</a></div></div></div>'
+    app.innerHTML = '<div class="auth-page"><div class="auth-card"><div class="auth-header"><div class="brand">◇</div><h1>Create Account</h1><p>Join K-VOID and start learning</p></div><form onsubmit="handleSignup(event)"><div class="form-group"><label class="form-label" for="suEmail">Email</label><input class="form-input" id="suEmail" type="email" required placeholder="you@example.com"></div><div class="form-group"><label class="form-label" for="suPassword">Password</label><input class="form-input" id="suPassword" type="password" required minlength="6" placeholder="At least 6 characters" oninput="updatePwStrength()"><div class="pw-strength"><div class="pw-strength-fill" id="pwBar"></div></div><span class="pw-label" id="pwLabel"></span></div><div class="form-group"><label class="form-label" for="suConfirm">Password</label><input class="form-input" id="suConfirm" type="password" required minlength="6" placeholder="Repeat your password" oninput="updatePwMatch()"><div class="pw-strength"><div class="pw-strength-fill" id="pwMatchBar"></div></div><span class="pw-label" id="pwMatchLabel"></span></div><button class="btn btn-primary btn-block btn-lg" type="submit" id="signupBtn">Create Account →</button></form><div id="signupError" class="form-error" style="text-align:center;margin-top:0.5rem"></div><div class="auth-footer">Already have an account? <a onclick="navigate(\'login\')">Log in</a></div></div></div>'
     setTimeout(() => $('suEmail')?.focus(), 100)
 }
 
@@ -334,9 +319,6 @@ window.handleSignup = async function(e) {
     }
 }
 
-// ============================================================
-// VERIFY EMAIL
-// ============================================================
 function renderVerifyEmail(app) {
     app.innerHTML = '<div class="auth-page"><div class="auth-card"><div class="auth-header"><div style="font-size:3rem">✉️</div><h1>Check Your Email</h1><p>We sent a verification link to your inbox. Click it to verify your account.</p></div><div style="text-align:center;padding:1rem 0"><p style="font-size:0.85rem;color:var(--text-secondary)">Didn\'t get it? <a onclick="resendVerification()" style="cursor:pointer">Resend</a></p></div><button class="btn btn-secondary btn-block" onclick="navigate(\'login\')">Back to Log In</button></div></div>'
 }
@@ -350,9 +332,6 @@ window.resendVerification = async function() {
     }
 }
 
-// ============================================================
-// COMPLETE PROFILE
-// ============================================================
 function renderCompleteProfile(app) {
     app.innerHTML = '<div class="auth-page"><div class="auth-card profile-setup-card"><div class="auth-header"><h1>Complete Your Profile</h1><p>Tell us about yourself</p></div><form onsubmit="handleCompleteProfile(event)"><div class="form-group" style="text-align:center"><div class="avatar-upload" id="cpAvatar" onclick="document.getElementById(\'cpPhoto\').click()"><span class="avatar-upload-placeholder">+</span></div><input type="file" id="cpPhoto" accept="image/*" style="display:none" onchange="handleCpPhoto(event)"><p style="font-size:0.8rem;color:var(--text-dim);margin-top:0.3rem;cursor:pointer" onclick="document.getElementById(\'cpPhoto\').click()">Add profile photo (optional)</p></div><div style="display:flex;gap:0.75rem"><div class="form-group" style="flex:1"><label class="form-label">First Name</label><input class="form-input" id="cpFname" required placeholder="John"></div><div class="form-group" style="flex:1"><label class="form-label">Last Name</label><input class="form-input" id="cpLname" required placeholder="Doe"></div></div><div class="form-group"><label class="form-label">Username</label><input class="form-input" id="cpUsername" required placeholder="johndoe"></div><div class="form-group"><label class="form-label">Gender</label><div class="gender-group"><button type="button" class="gender-btn" id="cpGenderMale" onclick="selectCpGender(\'male\')">♂ Male</button><button type="button" class="gender-btn" id="cpGenderFemale" onclick="selectCpGender(\'female\')">♀ Female</button></div></div><div class="form-group"><label class="form-label">Bio (optional)</label><textarea class="form-input" id="cpBio" rows="2" placeholder="A short bio about yourself" style="resize:vertical"></textarea></div><button class="btn btn-primary btn-block btn-lg" type="submit" id="cpBtn">Save & Continue →</button></form><div id="cpError" class="form-error" style="text-align:center;margin-top:0.5rem"></div></div></div>'
 
@@ -405,11 +384,16 @@ window.handleCompleteProfile = async function(e) {
             bio: bio,
             avatar_url: avatar,
             learning_level: 'beginner',
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            xp: 0,
+            streak_count: 0,
+            streak_last_date: null
         }
         const doc = await createProfile(_user.$id, profileData)
         _profile = { ...profileData, $id: doc.$id }
         _profileDocId = doc.$id
+        await addXp(100)
+        await updateStreak()
         showToast('Welcome to K-VOID!', 'success')
         navigate('dashboard')
     } catch (e) {
@@ -419,9 +403,6 @@ window.handleCompleteProfile = async function(e) {
     }
 }
 
-// ============================================================
-// FORGOT PASSWORD
-// ============================================================
 function renderForgotPassword(app) {
     app.innerHTML = '<div class="auth-page"><div class="auth-card"><div class="auth-header"><h1>Reset Password</h1><p>Enter your email and we\'ll send a reset link</p></div><form onsubmit="handleForgot(event)"><div class="form-group"><label class="form-label">Email</label><input class="form-input" id="forgotEmail" type="email" required placeholder="you@example.com"></div><button class="btn btn-primary btn-block btn-lg" type="submit">Send Reset Link</button></form><div id="forgotError" class="form-error" style="text-align:center;margin-top:0.5rem"></div><div class="auth-footer"><a onclick="navigate(\'login\')">Back to Log In</a></div></div></div>'
 }
@@ -463,58 +444,71 @@ window.handleResetConfirm = async function(e) {
     }
 }
 
-// ============================================================
-// DASHBOARD
-// ============================================================
-function renderDashboard(app) {
-    const stats = getTotalStats()
+async function renderDashboard(app) {
+    const stats = await getTotalStats()
     const name = _profile?.first_name || _user?.name || 'Learner'
     const avatar = _profile?.avatar_url || ''
     const avatarHTML = avatar
         ? '<img src="' + avatar + '" class="avatar avatar-lg" alt="">'
         : '<div class="avatar avatar-lg avatar-initials" style="font-size:1.5rem;width:80px;height:80px">' + getInitials(name) + '</div>'
 
-    const continueCourses = COURSES.filter(c => getCourseProgress(c.id) > 0 && getCourseProgress(c.id) < 100).slice(0, 3)
+    const xp = getProfileXp()
+    const level = getLevel(xp)
+    const streak = getStreak()
+    const xpNext = CONFIG.limits.levels.find(l => l.xpRequired > xp) || CONFIG.limits.levels[CONFIG.limits.levels.length - 1]
+    const xpProgress = xpNext ? Math.round((xp / xpNext.xpRequired) * 100) : 100
+    const nextTitle = xpNext ? xpNext.title : 'Legend'
+
+    const courses = await fetchCourses()
+    const progressMap = await getCourseProgressAll(_user?.$id)
+    const continueCourses = courses.filter(c => {
+        const p = progressMap[c.id] || 0
+        return p > 0 && p < 100
+    }).slice(0, 3)
+    const popularCourses = courses.filter(c => c.popular).slice(0, 3)
+
     const continueHTML = continueCourses.length
-        ? continueCourses.map(c => courseCardMini(c)).join('')
-        : '<p style="color:var(--text-secondary);font-size:0.9rem;padding:1.5rem;text-align:center">Start your first course below! 🚀</p>'
+        ? (await Promise.all(continueCourses.map(c => courseCardMini(c, progressMap[c.id])))).join('')
+        : '<p style="color:var(--text-secondary);font-size:0.9rem;padding:1.5rem;text-align:center">Start your first course below!</p>'
 
-    const popularCourses = COURSES.filter(c => c.popular).slice(0, 3).map(c => courseCardMini(c)).join('')
+    const popularHTML = (await Promise.all(popularCourses.map(c => courseCardMini(c)))).join('')
 
-    renderFrame(app, '<div class="dash-welcome">' + avatarHTML + '<div class="dash-welcome-text"><h1>Welcome back, ' + name + '! 👋</h1><p>' + stats.done + ' of ' + stats.total + ' lessons completed • ' + Math.round((stats.done / stats.total) * 100) + '% overall</p></div></div><div class="dash-grid"><div class="dash-stat-card"><div class="stat-value">' + stats.courses + '</div><div class="stat-label">Courses</div></div><div class="dash-stat-card"><div class="stat-value">' + stats.total + '</div><div class="stat-label">Total Lessons</div></div><div class="dash-stat-card"><div class="stat-value">' + stats.done + '</div><div class="stat-label">Completed</div></div><div class="dash-stat-card"><div class="stat-value">' + (stats.total - stats.done) + '</div><div class="stat-label">Remaining</div></div></div><div class="section-header"><h2>▶ Continue Learning</h2><a onclick="navigate(\'courses\')">View all →</a></div><div class="course-grid">' + continueHTML + '</div><div class="section-header" style="margin-top:2rem"><h2>🔥 Popular Courses</h2><a onclick="navigate(\'courses\')">View all →</a></div><div class="course-grid">' + popularCourses + '</div>', 'dashboard')
+    renderFrame(app, '<div class="dash-welcome">' + avatarHTML + '<div class="dash-welcome-text"><h1>Welcome back, ' + name + '</h1><p>' + stats.done + ' of ' + stats.total + ' lessons completed</p></div></div><div class="dash-grid"><div class="dash-stat-card"><div class="stat-value">' + xp + '</div><div class="stat-label">Total XP</div></div><div class="dash-stat-card"><div class="stat-value" style="color:var(--accent)">Lv.' + level.level + '</div><div class="stat-label">' + level.title + '</div></div><div class="dash-stat-card"><div class="stat-value">' + streak.count + '</div><div class="stat-label">Day Streak</div></div><div class="dash-stat-card"><div class="stat-value">' + stats.done + '/' + stats.total + '</div><div class="stat-label">Lessons</div></div></div><div class="xp-bar-container"><div class="xp-bar-label"><span>Level ' + level.level + ': ' + level.title + '</span><span>Next: ' + nextTitle + '</span></div><div class="xp-bar"><div class="xp-bar-fill" style="width:' + Math.min(xpProgress, 100) + '%"></div></div><div class="xp-bar-label" style="font-size:0.75rem"><span>' + xp + ' XP</span><span>' + (xpNext ? xpNext.xpRequired + ' XP' : 'MAX') + '</span></div></div><div class="section-header"><h2>▶ Continue Learning</h2><a onclick="navigate(\'courses\')">View all →</a></div><div class="course-grid">' + continueHTML + '</div><div class="section-header" style="margin-top:2rem"><h2>🔥 Popular Courses</h2><a onclick="navigate(\'courses\')">View all →</a></div><div class="course-grid">' + popularHTML + '</div>', 'dashboard')
 }
 
-// ============================================================
-// COURSES LIST
-// ============================================================
-function renderCourses(app) {
-    const grid = COURSES.map(c => courseCardFull(c)).join('')
+async function renderCourses(app) {
+    const courses = await fetchCourses()
+    const progressMap = await getCourseProgressAll(_user?.$id)
+    const grid = (await Promise.all(courses.map(c => courseCardMini(c, progressMap[c.id])))).join('')
     renderFrame(app, '<div class="section-header"><h2 style="font-size:1.4rem">📚 All Courses</h2></div><p style="color:var(--text-secondary);margin-bottom:1.5rem">Pick a course. Each lesson is bite-sized with practice exercises to lock it in.</p><div class="course-grid">' + grid + '</div>', 'courses')
 }
 
-// ============================================================
-// COURSE DETAIL
-// ============================================================
-function renderCourseDetail(app, courseId) {
-    const course = COURSES.find(c => c.id === courseId)
+async function renderCourseDetail(app, courseId) {
+    const course = await fetchCourse(courseId)
     if (!course) { navigate('courses'); return }
-    const prog = getCourseProgress(courseId)
-    const lessons = course.lessons.map(l => {
-        const done = isLessonComplete(courseId, l.id)
-        return '<div class="lesson-item' + (done ? ' completed' : '') + '" onclick="navigate(\'lesson\',\'' + courseId + '\',\'' + l.id + '\')"><div class="lesson-num">' + (done ? '✓' : (course.lessons.indexOf(l) + 1)) + '</div><div class="lesson-info"><h4>' + l.icon + ' ' + l.title + '</h4><p>' + l.desc + '</p></div></div>'
+    const prog = await getCourseProgress(_user?.$id, courseId)
+    const bookmarked = await isBookmarked(course.id)
+
+    const completedLessons = await getLessonProgress(_user?.$id, courseId)
+    const completedIds = completedLessons.map(p => p.lessonId)
+    const lessonsHTML = (course.lessons || []).map(l => {
+        const done = completedIds.includes(l.id)
+        const num = done ? '✓' : ((course.lessons.indexOf(l) + 1))
+        return '<div class="lesson-item' + (done ? ' completed' : '') + '" onclick="navigate(\'lesson\',\'' + courseId + '\',\'' + l.id + '\')"><div class="lesson-num">' + num + '</div><div class="lesson-info"><h4>' + l.icon + ' ' + l.title + '</h4><p>' + l.desc + '</p></div></div>'
     }).join('')
-    renderFrame(app, '<a class="back-link" onclick="navigate(\'courses\')">← Back to Courses</a><div class="course-detail-header"><div style="font-size:3rem;margin-bottom:0.5rem">' + course.icon + '</div><h1>' + course.title + '</h1><div class="course-detail-meta"><span>' + course.difficulty + '</span><span>' + course.duration + '</span><span>' + course.lessons.length + ' lessons</span><span>' + course.category + '</span></div><p style="color:var(--text-secondary);margin-top:0.5rem">' + course.desc + '</p><div class="course-card-bar" style="margin-top:0.75rem"><div class="course-card-fill" style="width:' + prog + '%"></div></div></div><div class="lesson-list">' + lessons + '</div>', 'courses')
+
+    const cr = course.rating || 4.5
+    const stars = Math.round(cr)
+    const starHTML = '★'.repeat(stars) + '☆'.repeat(5 - stars)
+    renderFrame(app, '<a class="back-link" onclick="navigate(\'courses\')">← Back to Courses</a><div class="course-detail-header"><div class="course-detail-icon" style="background:' + course.color + '22;color:' + course.color + ';width:64px;height:64px;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;margin-bottom:0.75rem">' + course.title.charAt(0) + '</div><div style="display:flex;justify-content:space-between;align-items:flex-start"><h1>' + course.title + '</h1><button class="btn btn-ghost btn-sm" onclick="toggleBookmarkCourse(\'' + course.id + '\')" id="bmBtn-' + course.id + '" style="font-size:1.2rem">' + (bookmarked ? '🔖' : '🔖') + '</button></div><div class="course-detail-meta"><span>' + course.difficulty + '</span><span>' + course.duration + '</span><span>' + (course.lessons || []).length + ' lessons</span><span>' + course.category + '</span><span style="color:' + (cr >= 4.5 ? 'var(--accent)' : 'var(--warning)') + '">' + starHTML + ' ' + cr.toFixed(1) + '</span></div><p style="color:var(--text-secondary);margin-top:0.5rem">' + course.desc + '</p><div class="course-card-bar" style="margin-top:0.75rem"><div class="course-card-fill" style="width:' + prog + '%"></div></div></div><div class="lesson-list">' + lessonsHTML + '</div>', 'courses')
 }
 
-// ============================================================
-// LESSON VIEW
-// ============================================================
-function renderLessonView(app, courseId, lessonId) {
-    const course = COURSES.find(c => c.id === courseId)
+async function renderLessonView(app, courseId, lessonId) {
+    const course = await fetchCourse(courseId)
     if (!course) { navigate('courses'); return }
-    const lesson = course.lessons.find(l => l.id === lessonId)
+    const lesson = (course.lessons || []).find(l => l.id === lessonId)
     if (!lesson) { navigate('course', courseId); return }
-    const idx = course.lessons.indexOf(lesson)
+    const idx = (course.lessons || []).indexOf(lesson)
     const prev = idx > 0 ? course.lessons[idx - 1] : null
     const next = idx < course.lessons.length - 1 ? course.lessons[idx + 1] : null
 
@@ -542,29 +536,30 @@ function renderLessonView(app, courseId, lessonId) {
 
     renderFrame(app, '<div class="lesson-view"><a class="back-link" onclick="navigate(\'course\',\'' + courseId + '\')">← Back to ' + course.title + '</a><h1>' + (lesson.icon || '📘') + ' ' + lesson.title + '</h1><p class="lesson-desc">' + lesson.desc + '</p>' + conceptsHTML + summaryHTML + quizHTML + navHTML + '</div>', 'courses')
 
-    setTimeout(() => {
-        if (!isLessonComplete(courseId, lessonId)) markLessonComplete(courseId, lessonId)
+    setTimeout(async () => {
+        if (!_user) return
+        const done = await isLessonComplete(_user.$id, courseId, lessonId)
+        if (!done) {
+            await saveLessonProgress(_user.$id, courseId, lessonId)
+            await addXp(CONFIG.limits.xpPerLesson)
+            await updateStreak()
+        }
     }, 1000)
 }
 
-// ============================================================
-// PROFILE
-// ============================================================
-function renderProfile(app) {
+async function renderProfile(app) {
     const p = _profile || {}
     const avatar = p.avatar_url || ''
     const avatarHTML = avatar
         ? '<img src="' + avatar + '" class="avatar avatar-xl" alt="" style="width:120px;height:120px">'
         : '<div class="avatar avatar-xl avatar-initials" style="width:120px;height:120px;font-size:2.5rem">' + getInitials(p.display_name) + '</div>'
     const joined = p.created_at ? formatDate(p.created_at) : 'Today'
-    const stats = getTotalStats()
+    const stats = await getTotalStats()
 
-    renderFrame(app, '<div class="profile-header">' + avatarHTML + '<div class="profile-header-info"><h1>' + (p.display_name || 'User') + '</h1><div class="username">@' + (p.username || 'user') + '</div>' + (p.bio ? '<div class="bio">' + p.bio + '</div>' : '') + '<div class="profile-meta"><span>📅 Joined ' + joined + '</span><span>📊 ' + p.learning_level || 'beginner' + '</span><span>' + (p.gender === 'male' ? '♂' : '♀') + '</span></div></div><button class="btn btn-secondary btn-sm" onclick="navigate(\'profile-edit\')">✏️ Edit Profile</button></div><div class="profile-stats"><div class="dash-stat-card"><div class="stat-value">' + stats.done + '</div><div class="stat-label">Lessons Done</div></div><div class="dash-stat-card"><div class="stat-value">' + COURSES.length + '</div><div class="stat-label">Courses</div></div><div class="dash-stat-card"><div class="stat-value">' + Math.round((stats.done / stats.total) * 100) + '%</div><div class="stat-label">Overall Progress</div></div></div>', 'profile')
+    const level = (p.learning_level || 'beginner')
+    renderFrame(app, '<div class="profile-header">' + avatarHTML + '<div class="profile-header-info"><h1>' + (p.display_name || 'User') + '</h1><div class="username">@' + (p.username || 'user') + '</div>' + (p.bio ? '<div class="bio">' + p.bio + '</div>' : '') + '<div class="profile-meta"><span>📅 Joined ' + joined + '</span><span>📊 ' + level + '</span><span>' + (p.gender === 'male' ? '♂' : '♀') + '</span></div></div><button class="btn btn-secondary btn-sm" onclick="navigate(\'profile-edit\')">✏️ Edit Profile</button></div><div class="profile-stats"><div class="dash-stat-card"><div class="stat-value">' + stats.done + '</div><div class="stat-label">Lessons Done</div></div><div class="dash-stat-card"><div class="stat-value">' + stats.courses + '</div><div class="stat-label">Courses</div></div><div class="dash-stat-card"><div class="stat-value">' + Math.round((stats.done / stats.total) * 100) + '%</div><div class="stat-label">Overall Progress</div></div></div>', 'profile')
 }
 
-// ============================================================
-// PROFILE EDIT
-// ============================================================
 function renderProfileEdit(app) {
     const p = _profile || {}
     const avatar = p.avatar_url || ''
@@ -619,38 +614,95 @@ window.handleProfileEdit = async function(e) {
     }
 }
 
-// ============================================================
-// SETTINGS
-// ============================================================
+window.toggleBookmarkCourse = async function(courseId) {
+    const now = await toggleBookmark(courseId)
+    const btn = $('bmBtn-' + courseId)
+    if (btn) btn.style.opacity = now ? '1' : '0.5'
+    showToast(now ? 'Course bookmarked!' : 'Bookmark removed.', 'info')
+}
+
 function renderSettings(app) {
     const email = _user?.email || ''
     renderFrame(app, '<div style="max-width:520px"><h2 style="margin-bottom:1rem">⚙️ Settings</h2><div class="card" style="margin-bottom:1rem"><h3 style="margin-bottom:0.5rem">Account</h3><p style="color:var(--text-secondary);font-size:0.9rem">Email: ' + email + '</p></div><div class="card" style="margin-bottom:1rem"><h3 style="margin-bottom:0.5rem">Learning Preferences</h3><button class="btn btn-secondary btn-sm" onclick="showToast(\'Coming soon!\', \'info\')">Change Learning Level</button></div><div class="card"><h3 style="margin-bottom:0.5rem">Danger Zone</h3><button class="btn btn-danger btn-sm" onclick="showToast(\'Logging out...\', \'info\');handleLogout()">Log Out</button></div></div>', 'settings')
 }
 
-// ============================================================
-// PLACEHOLDER
-// ============================================================
-function renderPlaceholder(app, icon, title, desc) {
-    const sidebarMap = { '🤖': 'ai-tutor', '🏆': 'certificates', '🔖': 'bookmarks' }
-    const active = sidebarMap[icon] || ''
-    renderFrame(app, '<div class="placeholder-page"><div class="icon">' + icon + '</div><h2>' + title + '</h2><p>' + desc + '</p></div>', active)
+function renderAiTutor(app) {
+    renderFrame(app, '<div style="max-width:800px;margin:0 auto"><div class="section-header"><h2>🤖 VOID Assistant</h2></div><p style="color:var(--text-secondary);margin-bottom:1.5rem">Ask me anything about programming. I can explain concepts, help debug, suggest learning paths, or answer questions about your courses.</p><div id="ai-chat" class="ai-chat"><div class="ai-message ai-bot"><div class="ai-avatar">◇</div><div class="ai-bubble"><p>Hi! I\'m VOID Assistant. Ask me anything about programming or your courses!</p><p style="font-size:0.8rem;color:var(--text-dim);margin-top:0.5rem">Try: "Explain loops in Python" or "What should I learn after HTML?"</p></div></div></div><div class="ai-input-row"><input class="form-input" id="aiInput" placeholder="Ask VOID Assistant..." onkeydown="if(event.key===\'Enter\')sendAiMessage()"><button class="btn btn-primary" onclick="sendAiMessage()" id="aiSendBtn">Send</button></div></div>', 'ai-tutor')
+
+    if (!window._aiProvider) {
+        window._aiProvider = CONFIG.ai.defaultProvider
+    }
 }
 
-// ============================================================
-// LOGOUT
-// ============================================================
+window.sendAiMessage = async function() {
+    const input = $('aiInput')
+    const chat = $('ai-chat')
+    const btn = $('aiSendBtn')
+    const msg = input?.value.trim()
+    if (!msg || !chat) return
+
+    chat.innerHTML += '<div class="ai-message ai-user"><div class="ai-bubble ai-user-bubble"><p>' + escapeHtml(msg) + '</p></div></div>'
+    input.value = ''
+    btn.disabled = true
+    btn.textContent = 'Thinking...'
+    chat.scrollTop = chat.scrollHeight
+
+    try {
+        const reply = await askVoidAssistant(msg)
+        chat.innerHTML += '<div class="ai-message ai-bot"><div class="ai-avatar">◇</div><div class="ai-bubble"><p>' + reply.replace(/\n/g, '<br>') + '</p></div></div>'
+    } catch (e) {
+        chat.innerHTML += '<div class="ai-message ai-bot"><div class="ai-avatar">◇</div><div class="ai-bubble ai-error"><p>Sorry, I couldn\'t reach the AI. ' + escapeHtml(e.message || 'Check your connection and try again.') + '</p></div></div>'
+    }
+    btn.disabled = false
+    btn.textContent = 'Send'
+    chat.scrollTop = chat.scrollHeight
+}
+
+async function renderCertificates(app) {
+    const stats = await getTotalStats()
+    const courses = await fetchCourses()
+    const progressMap = await getCourseProgressAll(_user?.$id)
+    const completedIds = Object.entries(progressMap).filter(([, p]) => p === 100).map(([id]) => id)
+    const certs = courses.filter(c => completedIds.includes(c.id))
+    const certHTML = certs.length
+        ? certs.map(c =>
+            '<div class="cert-card"><div class="cert-icon">🏆</div><div class="cert-info"><h3>' + c.title + '</h3><p>Completed all ' + (c.lessons || []).length + ' lessons</p></div><span class="cert-badge">✓ Earned</span></div>'
+          ).join('')
+        : '<div class="placeholder-page" style="padding:2rem"><div class="icon" style="font-size:3rem">🎯</div><h2>No Certificates Yet</h2><p>Complete a course to earn your first certificate!</p><button class="btn btn-primary" style="margin-top:1rem" onclick="navigate(\'courses\')">Browse Courses</button></div>'
+
+    renderFrame(app, '<div class="section-header"><h2>🏆 Certificates</h2></div><p style="color:var(--text-secondary);margin-bottom:1.5rem">' + stats.done + ' of ' + stats.total + ' lessons completed • ' + certs.length + ' course' + (certs.length !== 1 ? 's' : '') + ' fully completed</p><div class="cert-grid">' + certHTML + '</div>', 'certificates')
+}
+
+async function renderBookmarks(app) {
+    const userId = _user?.$id
+    let bookmarkedIds = []
+    if (userId) {
+        bookmarkedIds = await fetchBookmarks(userId)
+    }
+    const courses = await fetchCourses()
+    const bookmarkedCourses = bookmarkedIds.map(id => courses.find(c => c.id === id)).filter(Boolean)
+
+    let html
+    const progressMap = await getCourseProgressAll(_user?.$id)
+    if (bookmarkedCourses.length) {
+        html = '<div class="course-grid">' + (await Promise.all(bookmarkedCourses.map(c => courseCardMini(c, progressMap[c.id])))).join('') + '</div>'
+    } else {
+        html = '<div class="placeholder-page" style="padding:2rem"><div class="icon" style="font-size:3rem">🔖</div><h2>No Bookmarks Yet</h2><p>Bookmark courses to find them quickly later.</p><button class="btn btn-primary" style="margin-top:1rem" onclick="navigate(\'courses\')">Browse Courses</button></div>'
+    }
+    renderFrame(app, '<div class="section-header"><h2>🔖 Bookmarks</h2></div>' + html, 'bookmarks')
+}
+
 window.handleLogout = async function() {
     await logOut()
     _user = null
     _profile = null
     _profileDocId = null
+    clearContentCache()
+    clearProgressCache()
     showToast('Logged out.', 'info')
     navigate('home')
 }
 
-// ============================================================
-// HELPERS
-// ============================================================
 function extFor(id) {
     const m = { python: 'py', javascript: 'js', 'html-css': 'html', java: 'java', cpp: 'cpp', go: 'go', rust: 'rs', php: 'php', swift: 'swift', kotlin: 'kt', ruby: 'rb', sql: 'sql' }
     return m[id] || 'txt'
@@ -693,21 +745,69 @@ window.answerQuiz = function(btn, selected, correct, explanation) {
     feedback.textContent = selected === correct ? '✅ Correct! ' + explanation : '❌ Not quite. ' + explanation
 }
 
-function courseCardMini(c) {
-    const prog = getCourseProgress(c.id)
-    return '<div class="course-card" onclick="navigate(\'course\',\'' + c.id + '\')"><div class="course-card-thumb" style="background:' + c.color + '22">' + (prog === 100 ? '<span class="course-card-badge">✓ Done</span>' : '') + c.icon + '</div><div class="course-card-body"><h3>' + c.title + '</h3><div class="desc">' + c.desc + '</div><div class="course-card-meta"><span>' + c.difficulty + '</span><span>' + c.duration + '</span><span>' + c.lessons.length + ' lessons</span></div><div class="course-card-bar"><div class="course-card-fill" style="width:' + prog + '%"></div></div></div></div>'
+async function courseCardMini(c, prog) {
+    if (prog === undefined) {
+        prog = _user ? await getCourseProgress(_user.$id, c.id) : 0
+    }
+    const initial = c.title.charAt(0)
+    const thumbBg = c.color + '22'
+    const thumbText = c.color
+    const rating = c.rating || 4.5
+    const stars = Math.round(rating)
+    const starHTML = '★'.repeat(stars) + '☆'.repeat(5 - stars)
+    return '<div class="course-card" onclick="navigate(\'course\',\'' + c.id + '\')"><div class="course-card-thumb" style="background:' + thumbBg + ';color:' + c.color + ';font-size:2.5rem;font-weight:800">' + (prog === 100 ? '<span class="course-card-badge">Done</span>' : '') + initial + '</div><div class="course-card-body"><h3>' + c.title + '</h3><div class="desc">' + c.desc + '</div><div class="course-card-meta"><span>' + c.difficulty + '</span><span>' + c.duration + '</span><span>' + (c.lessons || []).length + ' lessons</span><span style="color:' + (rating >= 4 ? 'var(--accent)' : 'var(--warning)') + '">' + starHTML + ' ' + rating.toFixed(1) + '</span></div><div class="course-card-bar"><div class="course-card-fill" style="width:' + prog + '%"></div></div></div></div>'
 }
 
-function courseCardFull(c) {
-    return courseCardMini(c)
+function courseCardFull(c, prog) {
+    return courseCardMini(c, prog)
 }
+
+const _doSearch = debounce(async function(q) {
+    if (!q || q.length < CONFIG.limits.searchMinChars) {
+        const existing = document.getElementById('search-results')
+        if (existing) existing.remove()
+        return
+    }
+    const query = q.toLowerCase()
+    const courses = await fetchCourses()
+    const results = courses.filter(c =>
+        c.title.toLowerCase().includes(query) ||
+        c.desc.toLowerCase().includes(query) ||
+        c.category.toLowerCase().includes(query)
+    ).slice(0, CONFIG.limits.searchMaxResults)
+
+    let existing = document.getElementById('search-results')
+    if (!results.length) {
+        if (existing) existing.remove()
+        return
+    }
+    if (!existing) {
+        existing = document.createElement('div')
+        existing.id = 'search-results'
+        existing.className = 'search-dropdown'
+        const searchBar = document.querySelector('.search-bar')
+        if (searchBar) {
+            searchBar.style.position = 'relative'
+            searchBar.appendChild(existing)
+        }
+    }
+    existing.innerHTML = results.map(c =>
+        '<div class="search-result-item" onclick="navigate(\'course\',\'' + c.id + '\')"><span class="search-result-icon" style="background:' + c.color + '22;color:' + c.color + '">' +
+        '<span class="sr-icon-text">' + c.title.charAt(0) + '</span></span><div class="search-result-info"><div class="search-result-title">' + c.title + '</div><div class="search-result-meta">' + c.difficulty + ' • ' + c.category + '</div></div></div>'
+    ).join('')
+}, 200)
+
+function clearSearchDropdown() {
+    const existing = document.getElementById('search-results')
+    if (existing) existing.remove()
+}
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.search-bar')) clearSearchDropdown()
+})
 
 function debounceSearch(val) {
-    if (!val || val.length < 2) return
-    showToast('Search coming soon!', 'info')
+    _doSearch(val)
 }
 
-// ============================================================
-// BOOT
-// ============================================================
 document.addEventListener('DOMContentLoaded', init)

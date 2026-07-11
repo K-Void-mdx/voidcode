@@ -1,21 +1,24 @@
-const APPWRITE_ENDPOINT = 'https://cloud.appwrite.io/v1'
-const APPWRITE_PROJECT_ID = 'YOUR_PROJECT_ID'
-
 let _client = null
 let _account = null
 
 async function initAppwrite() {
+    if (_client) return true
     if (typeof Appwrite === 'undefined') {
-        setTimeout(initAppwrite, 200)
+        showToast('Failed to load Appwrite SDK. Check your internet connection.', 'error')
         return false
     }
-    if (_client) return true
-    const { Client, Account } = Appwrite
-    _client = new Client()
-        .setEndpoint(APPWRITE_ENDPOINT)
-        .setProject(APPWRITE_PROJECT_ID)
-    _account = new Account(_client)
-    return true
+    try {
+        const { Client, Account } = Appwrite
+        _client = new Client()
+            .setEndpoint(CONFIG.appwrite.endpoint)
+            .setProject(CONFIG.appwrite.projectId)
+        _account = new Account(_client)
+        return true
+    } catch (e) {
+        console.error('Appwrite init failed:', e)
+        showToast('Failed to connect to server.', 'error')
+        return false
+    }
 }
 
 function getAccount() {

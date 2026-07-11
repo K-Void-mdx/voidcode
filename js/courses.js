@@ -4,7 +4,7 @@ const COURSES = [
         subtitle: 'Beginner to Intermediate',
         desc: 'The most popular language for beginners. Used in web dev, AI, data science, and automation.',
         difficulty: 'Beginner', duration: '3 hours', category: 'General Purpose',
-        color: '#3776AB', popular: true,
+        color: '#3776AB', popular: true, rating: 4.8,
         lessons: [
             {
                 id: 'py-1', title: 'Hello, World!', icon: '🌍',
@@ -93,7 +93,7 @@ const COURSES = [
         subtitle: 'Web Development',
         desc: 'The language of the web. Makes websites interactive and dynamic.',
         difficulty: 'Beginner', duration: '2 hours', category: 'Web Development',
-        color: '#F7DF1E', popular: true,
+        color: '#F7DF1E', popular: true, rating: 4.7,
         lessons: [
             {
                 id: 'js-1', title: 'Hello, JS!', icon: '🌍',
@@ -150,7 +150,7 @@ const COURSES = [
         subtitle: 'Web Design Basics',
         desc: 'Build beautiful websites. HTML gives structure, CSS adds style.',
         difficulty: 'Beginner', duration: '2 hours', category: 'Web Development',
-        color: '#E34F26', popular: true,
+        color: '#E34F26', popular: true, rating: 4.6,
         lessons: [
             {
                 id: 'hc-1', title: 'HTML Structure', icon: '🏗️',
@@ -191,7 +191,7 @@ const COURSES = [
         subtitle: 'Object-Oriented Programming',
         desc: 'One of the most widely-used languages. Powers Android apps and enterprise software.',
         difficulty: 'Intermediate', duration: '3 hours', category: 'General Purpose',
-        color: '#ED8B00', popular: true,
+        color: '#ED8B00', popular: true, rating: 4.5,
         lessons: [
             {
                 id: 'jv-1', title: 'Hello, Java!', icon: '🌍',
@@ -228,7 +228,7 @@ const COURSES = [
         subtitle: 'Performance & Systems',
         desc: 'Fast and powerful. Used in game dev, operating systems, and high-performance apps.',
         difficulty: 'Intermediate', duration: '2 hours', category: 'Systems',
-        color: '#00599C',
+        color: '#00599C', rating: 4.4,
         lessons: [
             {
                 id: 'cpp-1', title: 'Hello, C++!', icon: '🌍',
@@ -261,7 +261,7 @@ const COURSES = [
         subtitle: 'Modern & Simple',
         desc: 'Built by Google. Simple syntax, fast compilation, great for servers and cloud apps.',
         difficulty: 'Intermediate', duration: '2 hours', category: 'Systems',
-        color: '#00ADD8',
+        color: '#00ADD8', rating: 4.3,
         lessons: [
             {
                 id: 'go-1', title: 'Hello, Go!', icon: '🌍',
@@ -286,7 +286,7 @@ const COURSES = [
         subtitle: 'Server-Side Web',
         desc: 'Powers most websites on the internet (WordPress, Facebook). Runs on servers.',
         difficulty: 'Beginner', duration: '1.5 hours', category: 'Web Development',
-        color: '#777BB3',
+        color: '#777BB3', rating: 4.2,
         lessons: [
             {
                 id: 'php-1', title: 'Hello, PHP!', icon: '🌍',
@@ -311,7 +311,7 @@ const COURSES = [
         subtitle: 'Elegant & Productive',
         desc: 'Designed for developer happiness. Used in web dev (Ruby on Rails). Clean syntax.',
         difficulty: 'Beginner', duration: '1.5 hours', category: 'General Purpose',
-        color: '#CC342D',
+        color: '#CC342D', rating: 4.1,
         lessons: [
             {
                 id: 'rb-1', title: 'Hello, Ruby!', icon: '🌍',
@@ -336,7 +336,7 @@ const COURSES = [
         subtitle: 'Safe & Fast Systems',
         desc: 'Memory-safe without garbage collection. Used in browsers, OS, and CLI tools.',
         difficulty: 'Advanced', duration: '2 hours', category: 'Systems',
-        color: '#DEA584',
+        color: '#DEA584', rating: 4.6,
         lessons: [
             {
                 id: 'rs-1', title: 'Hello, Rust!', icon: '🌍',
@@ -361,7 +361,7 @@ const COURSES = [
         subtitle: 'Apple Apps',
         desc: 'Apple\'s modern language for iOS, macOS, watchOS, and tvOS apps.',
         difficulty: 'Intermediate', duration: '1.5 hours', category: 'Mobile',
-        color: '#F05138',
+        color: '#F05138', rating: 4.3,
         lessons: [
             {
                 id: 'sw-1', title: 'Hello, Swift!', icon: '🌍',
@@ -386,7 +386,7 @@ const COURSES = [
         subtitle: 'Modern JVM & Android',
         desc: 'Google\'s preferred language for Android development. Concise, safe, Java-compatible.',
         difficulty: 'Intermediate', duration: '1.5 hours', category: 'Mobile',
-        color: '#7F52FF',
+        color: '#7F52FF', rating: 4.4,
         lessons: [
             {
                 id: 'kt-1', title: 'Hello, Kotlin!', icon: '🌍',
@@ -411,7 +411,7 @@ const COURSES = [
         subtitle: 'Database Queries',
         desc: 'The language of databases. Store, query, and manipulate data. Essential for backend dev.',
         difficulty: 'Intermediate', duration: '2 hours', category: 'Data',
-        color: '#336791',
+        color: '#336791', rating: 4.5,
         lessons: [
             {
                 id: 'sql-1', title: 'SELECT & FROM', icon: '🔍',
