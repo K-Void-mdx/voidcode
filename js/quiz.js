@@ -9,9 +9,7 @@ async function fetchQuiz(lessonId) {
             [Query.equal('lessonId', lessonId)]
         )
         return res.documents[0] || null
-    } catch {
-        return null
-    }
+    } catch { return null }
 }
 
 async function fetchQuizQuestions(quizId) {
@@ -25,9 +23,7 @@ async function fetchQuizQuestions(quizId) {
             [Query.equal('quizId', quizId), Query.orderAsc('order')]
         )
         return res.documents || []
-    } catch {
-        return []
-    }
+    } catch { return [] }
 }
 
 async function submitQuizAttempt(userId, quizId, answers, score, total) {
@@ -39,19 +35,9 @@ async function submitQuizAttempt(userId, quizId, answers, score, total) {
             CONFIG.database.id,
             CONFIG.database.collections.quizAttempts,
             ID.unique(),
-            {
-                userId,
-                quizId,
-                answers: JSON.stringify(answers),
-                score,
-                total,
-                completed_at: new Date().toISOString()
-            }
+            { userId, quizId, answers: JSON.stringify(answers), score, total, completed_at: new Date().toISOString() }
         )
-    } catch (e) {
-        console.warn('submitQuizAttempt failed:', e)
-        return null
-    }
+    } catch (e) { console.warn('submitQuizAttempt failed:', e); return null }
 }
 
 async function getQuizAttempts(userId, quizId) {
@@ -62,13 +48,7 @@ async function getQuizAttempts(userId, quizId) {
         const queries = [Query.equal('userId', userId)]
         if (quizId) queries.push(Query.equal('quizId', quizId))
         queries.push(Query.orderDesc('completed_at'))
-        const res = await db.listDocuments(
-            CONFIG.database.id,
-            CONFIG.database.collections.quizAttempts,
-            queries
-        )
+        const res = await db.listDocuments(CONFIG.database.id, CONFIG.database.collections.quizAttempts, queries)
         return res.documents || []
-    } catch {
-        return []
-    }
+    } catch { return [] }
 }

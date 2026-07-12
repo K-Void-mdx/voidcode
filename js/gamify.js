@@ -1,6 +1,4 @@
-function getProfileXp() {
-    return _profile?.xp || 0
-}
+function getProfileXp() { return _profile?.xp || 0 }
 
 async function addXp(amount) {
     const current = getProfileXp()
@@ -10,7 +8,7 @@ async function addXp(amount) {
             await updateProfile(_profileDocId, { xp: total })
             _profile.xp = total
         } catch (e) {
-            console.warn('Failed to save XP to Appwrite:', e)
+            console.warn('Failed to save XP:', e)
             _profile.xp = total
         }
     } else {
@@ -35,16 +33,13 @@ function checkLevelUp(oldXp, newXp) {
     const oldLevel = getLevel(oldXp).level
     const newLevel = getLevel(newXp).level
     if (newLevel > oldLevel) {
-        showToast('🎉 Level Up! You reached level ' + newLevel + ': ' + getLevel(newXp).title, 'success')
+        showToast('Level Up! You reached level ' + newLevel + ': ' + getLevel(newXp).title, 'success')
     }
 }
 
 function getStreak() {
     if (!_profile) return { count: 0, lastDate: null }
-    const data = {
-        count: _profile.streak_count || 0,
-        lastDate: _profile.streak_last_date || null
-    }
+    const data = { count: _profile.streak_count || 0, lastDate: _profile.streak_last_date || null }
     const today = new Date().toDateString()
     const last = data.lastDate ? new Date(data.lastDate).toDateString() : null
     const yesterday = new Date(Date.now() - 86400000).toDateString()
@@ -62,15 +57,10 @@ async function updateStreak() {
     if (count > 1) await addXp(CONFIG.limits.xpStreakBonus)
     if (_profileDocId) {
         try {
-            await updateProfile(_profileDocId, {
-                streak_count: count,
-                streak_last_date: today
-            })
+            await updateProfile(_profileDocId, { streak_count: count, streak_last_date: today })
             _profile.streak_count = count
             _profile.streak_last_date = today
-        } catch (e) {
-            console.warn('Failed to save streak:', e)
-        }
+        } catch (e) { console.warn('Failed to save streak:', e) }
     }
     return count
 }

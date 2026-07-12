@@ -9,11 +9,7 @@ async function saveLessonProgress(userId, courseId, lessonId) {
         const existing = await db.listDocuments(
             CONFIG.database.id,
             CONFIG.database.collections.lessonProgress,
-            [
-                Query.equal('userId', userId),
-                Query.equal('courseId', courseId),
-                Query.equal('lessonId', lessonId)
-            ]
+            [Query.equal('userId', userId), Query.equal('courseId', courseId), Query.equal('lessonId', lessonId)]
         )
         if (existing.documents.length) return existing.documents[0]
         const doc = await db.createDocument(
@@ -38,15 +34,10 @@ async function getLessonProgress(userId, courseId) {
         const res = await db.listDocuments(
             CONFIG.database.id,
             CONFIG.database.collections.lessonProgress,
-            [
-                Query.equal('userId', userId),
-                Query.equal('courseId', courseId)
-            ]
+            [Query.equal('userId', userId), Query.equal('courseId', courseId)]
         )
         return res.documents || []
-    } catch {
-        return []
-    }
+    } catch { return [] }
 }
 
 async function getAllUserProgress(userId) {
@@ -68,9 +59,7 @@ async function getAllUserProgress(userId) {
     }
 }
 
-function clearProgressCache() {
-    _allUserProgressCache = null
-}
+function clearProgressCache() { _allUserProgressCache = null }
 
 async function isLessonComplete(userId, courseId, lessonId) {
     const progress = await getLessonProgress(userId, courseId)
@@ -87,10 +76,7 @@ async function getCourseProgress(userId, courseId) {
 async function getCourseProgressAll(userId) {
     const courses = await fetchCourses()
     const result = {}
-    if (!userId) {
-        for (const c of courses) result[c.id] = 0
-        return result
-    }
+    if (!userId) { for (const c of courses) result[c.id] = 0; return result }
     const allProgress = await getAllUserProgress(userId)
     const progressByCourse = {}
     for (const p of allProgress) {
@@ -109,9 +95,7 @@ async function getTotalStats() {
     const courses = await fetchCourses()
     const userId = _user?.$id
     let total = 0
-    for (const c of courses) {
-        total += c.lessons?.length || 0
-    }
+    for (const c of courses) total += c.lessons?.length || 0
     if (!userId) return { total, done: 0, courses: courses.length }
     const allProgress = await getAllUserProgress(userId)
     return { total, done: allProgress.length, courses: courses.length }
@@ -132,7 +116,5 @@ async function migrateLocalProgress() {
             }
             if (migrated) localStorage.removeItem('kvoid_progress')
         }
-    } catch (e) {
-        console.warn('Local progress migration skipped:', e)
-    }
+    } catch (e) { console.warn('Local progress migration skipped:', e) }
 }

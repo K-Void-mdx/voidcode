@@ -20,19 +20,15 @@ async function fetchSettings(userId, force) {
             CONFIG.database.id,
             CONFIG.database.collections.settings,
             ID.unique(),
-            { userId, preferences: {}, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+            { userId, preferences: '{}', created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
         )
         return _settingsCache
-    } catch {
-        _settingsCache = null
-        return null
-    }
+    } catch { _settingsCache = null; return null }
 }
 
 async function updateSettings(userId, prefs) {
     initDb()
     const db = getDb()
-    const Query = getQuery()
     try {
         const settings = await fetchSettings(userId, true)
         if (!settings) return null
@@ -40,12 +36,14 @@ async function updateSettings(userId, prefs) {
             CONFIG.database.id,
             CONFIG.database.collections.settings,
             settings.$id,
-            { preferences: prefs, updated_at: new Date().toISOString() }
+            { preferences: JSON.stringify(prefs), updated_at: new Date().toISOString() }
         )
         _settingsCache = updated
         return updated
-    } catch (e) {
-        console.warn('updateSettings failed:', e)
-        return null
-    }
+    } catch (e) { console.warn('updateSettings failed:', e); return null }
+}
+
+function parsePreferences(settings) {
+    if (!settings) return {}
+    try { return JSON.parse(settings.preferences || '{}') } catch { return {} }
 }

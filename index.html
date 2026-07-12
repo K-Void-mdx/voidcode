@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,20 +7,26 @@
     <meta property="og:title" content="K-VOID Programming Hub">
     <meta property="og:description" content="Learn to code. Completely free.">
     <meta property="og:type" content="website">
-    <meta name="theme-color" content="#7c3aed">
+    <meta name="theme-color" content="#D4A842">
     <title>K-VOID Programming Hub</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <script>
+        (function() {
+            var t = localStorage.getItem('kvoid_theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
 </head>
 <body>
     <div id="app"></div>
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
     <div id="toast-container"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@26.1.0"></script>
-    <script>if (typeof Appwrite === 'undefined') { document.write('<script src="https://unpkg.com/appwrite@26.1.0"><\\/script>') }</script>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@26.1.0/dist/iife/sdk.js"></script>
+    <script>if (typeof Appwrite === 'undefined') { document.write('<script src="https://unpkg.com/appwrite@26.1.0/dist/iife/sdk.js"><\/script>') }</script>
     <script src="js/config.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/courses.js"></script>

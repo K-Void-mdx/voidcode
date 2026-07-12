@@ -5,16 +5,10 @@ async function fetchAchievements(force) {
     initDb()
     const db = getDb()
     try {
-        const res = await db.listDocuments(
-            CONFIG.database.id,
-            CONFIG.database.collections.achievements
-        )
+        const res = await db.listDocuments(CONFIG.database.id, CONFIG.database.collections.achievements)
         _achievementsCache = res.documents || []
         return _achievementsCache
-    } catch {
-        _achievementsCache = []
-        return _achievementsCache
-    }
+    } catch { _achievementsCache = []; return _achievementsCache }
 }
 
 async function fetchUserAchievements(userId) {
@@ -28,9 +22,7 @@ async function fetchUserAchievements(userId) {
             [Query.equal('userId', userId)]
         )
         return res.documents || []
-    } catch {
-        return []
-    }
+    } catch { return [] }
 }
 
 async function awardAchievement(userId, achievementId) {
@@ -42,10 +34,7 @@ async function awardAchievement(userId, achievementId) {
         const existing = await db.listDocuments(
             CONFIG.database.id,
             CONFIG.database.collections.userAchievements,
-            [
-                Query.equal('userId', userId),
-                Query.equal('achievementId', achievementId)
-            ]
+            [Query.equal('userId', userId), Query.equal('achievementId', achievementId)]
         )
         if (existing.documents.length) return existing.documents[0]
         return await db.createDocument(
@@ -54,10 +43,7 @@ async function awardAchievement(userId, achievementId) {
             ID.unique(),
             { userId, achievementId, earned_at: new Date().toISOString() }
         )
-    } catch (e) {
-        console.warn('awardAchievement failed:', e)
-        return null
-    }
+    } catch (e) { console.warn('awardAchievement failed:', e); return null }
 }
 
 async function checkAndAwardCertificate(userId, courseId) {
@@ -71,27 +57,16 @@ async function checkAndAwardCertificate(userId, courseId) {
         const existing = await db.listDocuments(
             CONFIG.database.id,
             CONFIG.database.collections.certificates,
-            [
-                Query.equal('userId', userId),
-                Query.equal('courseId', courseId)
-            ]
+            [Query.equal('userId', userId), Query.equal('courseId', courseId)]
         )
         if (existing.documents.length) return existing.documents[0]
         return await db.createDocument(
             CONFIG.database.id,
             CONFIG.database.collections.certificates,
             ID.unique(),
-            {
-                userId,
-                courseId,
-                course_title: course.title,
-                completed_at: new Date().toISOString()
-            }
+            { userId, courseId, course_title: course.title, completed_at: new Date().toISOString() }
         )
-    } catch (e) {
-        console.warn('checkAndAwardCertificate failed:', e)
-        return null
-    }
+    } catch (e) { console.warn('checkAndAwardCertificate failed:', e); return null }
 }
 
 async function fetchCertificates(userId) {
@@ -105,7 +80,5 @@ async function fetchCertificates(userId) {
             [Query.equal('userId', userId)]
         )
         return res.documents || []
-    } catch {
-        return []
-    }
+    } catch { return [] }
 }

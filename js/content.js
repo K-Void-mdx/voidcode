@@ -6,29 +6,20 @@ async function fetchCourses(force) {
     try {
         initDb()
         const db = getDb()
-        const res = await db.listDocuments(
-            CONFIG.database.id,
-            CONFIG.database.collections.courses
-        )
+        const res = await db.listDocuments(CONFIG.database.id, CONFIG.database.collections.courses)
         _coursesCache = (res.documents || []).map(formatCourseDoc)
 
-        const allLessonsRes = await db.listDocuments(
-            CONFIG.database.id,
-            CONFIG.database.collections.lessons
-        )
+        const allLessonsRes = await db.listDocuments(CONFIG.database.id, CONFIG.database.collections.lessons)
         const allLessons = (allLessonsRes.documents || []).map(formatLessonDoc)
         _lessonsCache = {}
         for (const l of allLessons) {
             if (!_lessonsCache[l.courseId]) _lessonsCache[l.courseId] = []
             _lessonsCache[l.courseId].push(l)
         }
-        for (const c of _coursesCache) {
-            c.lessons = _lessonsCache[c.id] || []
-        }
-
+        for (const c of _coursesCache) c.lessons = _lessonsCache[c.id] || []
         return _coursesCache
     } catch (e) {
-        console.warn('Failed to fetch courses from Appwrite, using local data:', e)
+        console.warn('Failed to fetch from Appwrite, using local data:', e)
         return COURSES || []
     }
 }
@@ -53,7 +44,7 @@ async function fetchLessons(courseId, force) {
         _lessonsCache[courseId] = lessons
         return lessons
     } catch (e) {
-        console.warn('Failed to fetch lessons from Appwrite:', e)
+        console.warn('Failed to fetch lessons:', e)
         const course = COURSES.find(c => c.id === courseId)
         return course ? course.lessons : []
     }
@@ -75,7 +66,7 @@ function formatCourseDoc(doc) {
         difficulty: doc.difficulty || 'Beginner',
         duration: doc.duration || '',
         category: doc.category || '',
-        color: doc.color || '#7c3aed',
+        color: doc.color || '#C9922A',
         popular: !!doc.popular,
         rating: parseFloat(doc.rating) || 4.5,
         lessons: []
@@ -97,7 +88,4 @@ function formatLessonDoc(doc) {
     }
 }
 
-function clearContentCache() {
-    _coursesCache = null
-    _lessonsCache = {}
-}
+function clearContentCache() { _coursesCache = null; _lessonsCache = {} }

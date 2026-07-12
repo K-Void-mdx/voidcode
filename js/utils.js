@@ -39,7 +39,7 @@ function getAvatarUrl(gender, seed) {
     if (gender === 'female') {
         return 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + s + '_f&accessoriesType=blank&topType=longHairStraight&facialHairType=blank&clothingType=blazer&eyeType=default&mouthType=smile&skinColor=light'
     }
-    return 'https://api.dicebear.com/7.x/initials/svg?seed=' + s + '&backgroundColor=7c3aed'
+    return 'https://api.dicebear.com/7.x/initials/svg?seed=' + s + '&backgroundColor=C9922A'
 }
 
 function getPasswordStrength(pw) {
@@ -56,11 +56,21 @@ function getPasswordStrength(pw) {
 function strengthColor(score) {
     if (score <= 1) return '#ef4444'
     if (score <= 3) return '#f59e0b'
-    return '#06d6a0'
+    return '#22c55e'
 }
 
 function strengthLabel(score) {
     if (score <= 1) return 'Weak'
     if (score <= 3) return 'Medium'
     return 'Strong'
+}
+
+function escapeHtml(str) {
+    if (!str) return ''
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
 }

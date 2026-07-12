@@ -8,12 +8,12 @@ const CONFIG = {
     },
 
     appwrite: {
-        endpoint: (typeof __APPWRITE_ENDPOINT__ !== 'undefined' ? __APPWRITE_ENDPOINT__ : 'https://cloud.appwrite.io/v1'),
-        projectId: (typeof __APPWRITE_PROJECT_ID__ !== 'undefined' ? __APPWRITE_PROJECT_ID__ : 'YOUR_PROJECT_ID'),
+        endpoint: 'https://fra.cloud.appwrite.io/v1',
+        projectId: '6a4f8acd002d44e26f1c'
     },
 
     database: {
-        id: (typeof __DATABASE_ID__ !== 'undefined' ? __DATABASE_ID__ : 'main'),
+        id: '6a4f8dc30008cee8c6b8',
         collections: {
             profiles: 'profiles',
             courses: 'courses',
@@ -35,33 +35,12 @@ const CONFIG = {
     },
 
     storage: {
-        avatarsBucketId: (typeof __AVATARS_BUCKET_ID__ !== 'undefined' ? __AVATARS_BUCKET_ID__ : 'avatars')
+        avatarsBucketId: 'avatars'
     },
 
     ai: {
+        proxyEndpoint: '/api/ai',
         defaultProvider: 'groq',
-        providers: {
-            groq: {
-                name: 'Groq',
-                model: 'llama-3.3-70b-versatile',
-                endpoint: 'https://api.groq.com/openai/v1/chat/completions'
-            },
-            gemini: {
-                name: 'Gemini',
-                model: 'gemini-2.0-flash',
-                endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
-            },
-            openrouter: {
-                name: 'OpenRouter',
-                model: 'openai/gpt-4o-mini',
-                endpoint: 'https://openrouter.ai/api/v1/chat/completions'
-            },
-            opencodezen: {
-                name: 'OpenCode Zen',
-                model: 'opencode-zen-1',
-                endpoint: 'https://zen.opencode.ai/v1/chat/completions'
-            }
-        },
         systemPrompt: `You are VOID Assistant, the intelligent learning companion for K-VOID Programming Hub.
 You help users learn to code by:
 - Explaining programming concepts clearly
