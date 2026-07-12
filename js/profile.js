@@ -1,12 +1,17 @@
 async function createProfile(userId, data) {
     initDb()
     const db = getDb()
-    const { ID } = Appwrite
+    const { ID, Permission, Role } = Appwrite
     const doc = await db.createDocument(
         CONFIG.database.id,
         CONFIG.database.collections.profiles,
         ID.unique(),
-        { userId, ...data }
+        { userId, ...data },
+        [
+            Permission.read(Role.user(userId)),
+            Permission.update(Role.user(userId)),
+            Permission.delete(Role.user(userId))
+        ]
     )
     return doc
 }

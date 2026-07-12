@@ -5,7 +5,7 @@ async function fetchSettings(userId, force) {
     initDb()
     const db = getDb()
     const Query = getQuery()
-    const { ID } = Appwrite
+    const { ID, Permission, Role } = Appwrite
     try {
         const res = await db.listDocuments(
             CONFIG.database.id,
@@ -20,7 +20,12 @@ async function fetchSettings(userId, force) {
             CONFIG.database.id,
             CONFIG.database.collections.settings,
             ID.unique(),
-            { userId, preferences: '{}', created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+            { userId, preferences: '{}', created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+            [
+                Permission.read(Role.user(userId)),
+                Permission.update(Role.user(userId)),
+                Permission.delete(Role.user(userId))
+            ]
         )
         return _settingsCache
     } catch { _settingsCache = null; return null }

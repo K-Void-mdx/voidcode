@@ -19,13 +19,17 @@ async function fetchBookmarks(userId, force) {
 async function addBookmark(userId, courseId) {
     initDb()
     const db = getDb()
-    const { ID } = Appwrite
+    const { ID, Permission, Role } = Appwrite
     try {
         await db.createDocument(
             CONFIG.database.id,
             CONFIG.database.collections.bookmarks,
             ID.unique(),
-            { userId, courseId, created_at: new Date().toISOString() }
+            { userId, courseId, created_at: new Date().toISOString() },
+            [
+                Permission.read(Role.user(userId)),
+                Permission.delete(Role.user(userId))
+            ]
         )
         if (_bookmarksCache && !_bookmarksCache.includes(courseId)) _bookmarksCache.push(courseId)
         return true
@@ -90,13 +94,18 @@ async function fetchNotes(userId, lessonId) {
 async function createNote(userId, lessonId, content) {
     initDb()
     const db = getDb()
-    const { ID } = Appwrite
+    const { ID, Permission, Role } = Appwrite
     try {
         return await db.createDocument(
             CONFIG.database.id,
             CONFIG.database.collections.notes,
             ID.unique(),
-            { userId, lessonId, content, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+            { userId, lessonId, content, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+            [
+                Permission.read(Role.user(userId)),
+                Permission.update(Role.user(userId)),
+                Permission.delete(Role.user(userId))
+            ]
         )
     } catch (e) { console.warn('createNote failed:', e); return null }
 }

@@ -4,7 +4,7 @@ async function saveLessonProgress(userId, courseId, lessonId) {
     initDb()
     const db = getDb()
     const Query = getQuery()
-    const { ID } = Appwrite
+    const { ID, Permission, Role } = Appwrite
     try {
         const existing = await db.listDocuments(
             CONFIG.database.id,
@@ -16,7 +16,12 @@ async function saveLessonProgress(userId, courseId, lessonId) {
             CONFIG.database.id,
             CONFIG.database.collections.lessonProgress,
             ID.unique(),
-            { userId, courseId, lessonId, completed_at: new Date().toISOString() }
+            { userId, courseId, lessonId, completed_at: new Date().toISOString() },
+            [
+                Permission.read(Role.user(userId)),
+                Permission.update(Role.user(userId)),
+                Permission.delete(Role.user(userId))
+            ]
         )
         if (_allUserProgressCache) _allUserProgressCache.push(doc)
         return doc

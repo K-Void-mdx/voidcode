@@ -29,13 +29,17 @@ async function fetchQuizQuestions(quizId) {
 async function submitQuizAttempt(userId, quizId, answers, score, total) {
     initDb()
     const db = getDb()
-    const { ID } = Appwrite
+    const { ID, Permission, Role } = Appwrite
     try {
         return await db.createDocument(
             CONFIG.database.id,
             CONFIG.database.collections.quizAttempts,
             ID.unique(),
-            { userId, quizId, answers: JSON.stringify(answers), score, total, completed_at: new Date().toISOString() }
+            { userId, quizId, answers: JSON.stringify(answers), score, total, completed_at: new Date().toISOString() },
+            [
+                Permission.read(Role.user(userId)),
+                Permission.delete(Role.user(userId))
+            ]
         )
     } catch (e) { console.warn('submitQuizAttempt failed:', e); return null }
 }

@@ -29,13 +29,18 @@ async function markNotificationRead(notifId) {
 async function createNotification(userId, type, title, message) {
     initDb()
     const db = getDb()
-    const { ID } = Appwrite
+    const { ID, Permission, Role } = Appwrite
     try {
         return await db.createDocument(
             CONFIG.database.id,
             CONFIG.database.collections.notifications,
             ID.unique(),
-            { userId, type: type || 'info', title, message, read: false, created_at: new Date().toISOString() }
+            { userId, type: type || 'info', title, message, read: false, created_at: new Date().toISOString() },
+            [
+                Permission.read(Role.user(userId)),
+                Permission.update(Role.user(userId)),
+                Permission.delete(Role.user(userId))
+            ]
         )
     } catch (e) { console.warn('createNotification failed:', e); return null }
 }

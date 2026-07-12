@@ -29,7 +29,7 @@ async function awardAchievement(userId, achievementId) {
     initDb()
     const db = getDb()
     const Query = getQuery()
-    const { ID } = Appwrite
+    const { ID, Permission, Role } = Appwrite
     try {
         const existing = await db.listDocuments(
             CONFIG.database.id,
@@ -41,7 +41,10 @@ async function awardAchievement(userId, achievementId) {
             CONFIG.database.id,
             CONFIG.database.collections.userAchievements,
             ID.unique(),
-            { userId, achievementId, earned_at: new Date().toISOString() }
+            { userId, achievementId, earned_at: new Date().toISOString() },
+            [
+                Permission.read(Role.user(userId))
+            ]
         )
     } catch (e) { console.warn('awardAchievement failed:', e); return null }
 }
@@ -50,7 +53,7 @@ async function checkAndAwardCertificate(userId, courseId) {
     initDb()
     const db = getDb()
     const Query = getQuery()
-    const { ID } = Appwrite
+    const { ID, Permission, Role } = Appwrite
     try {
         const course = await fetchCourse(courseId)
         if (!course) return null
@@ -64,7 +67,10 @@ async function checkAndAwardCertificate(userId, courseId) {
             CONFIG.database.id,
             CONFIG.database.collections.certificates,
             ID.unique(),
-            { userId, courseId, course_title: course.title, completed_at: new Date().toISOString() }
+            { userId, courseId, course_title: course.title, completed_at: new Date().toISOString() },
+            [
+                Permission.read(Role.user(userId))
+            ]
         )
     } catch (e) { console.warn('checkAndAwardCertificate failed:', e); return null }
 }
