@@ -15,22 +15,22 @@ const CONFIG = {
     database: {
         id: '6a4f8dc30008cee8c6b8',
         collections: {
-            profiles: 'profiles',
-            courses: 'courses',
-            lessons: 'lessons',
-            lessonProgress: 'lesson_progress',
-            learningEvents: 'learning_events',
-            notes: 'notes',
-            bookmarks: 'bookmarks',
-            courseProgress: 'course_progress',
-            quizzes: 'quizzes',
-            quizQuestions: 'quiz_questions',
-            quizAttempts: 'quiz_attempts',
-            achievements: 'achievements',
-            userAchievements: 'user_achievements',
-            certificates: 'certificates',
-            notifications: 'notifications',
-            settings: 'settings'
+            profiles: '6a4f8f1300021a4f830b',
+            courses: '6a4fb2030032c06ed6b2',
+            lessons: '6a4fbb3600109b8fe277',
+            lessonProgress: '6a4fcd27000c92d63a9e',
+            learningEvents: '6a4ffbe600101ad65bf3',
+            notes: '6a50010500008cd5a588',
+            bookmarks: '6a50037a000353186782',
+            courseProgress: '6a500cbf0013aa95a1ae',
+            quizzes: '6a500f85001c638e4793',
+            quizQuestions: '6a5013cf00056b581bf5',
+            quizAttempts: '6a50176100190e57a576',
+            achievements: '6a504b6f00165590e89b',
+            userAchievements: '6a504daf0016ad7019ed',
+            certificates: '6a50500d000a3b33d7a6',
+            notifications: '6a5053ea0037a5c41b76',
+            settings: '6a5055f10023c29b5e76'
         }
     },
 
