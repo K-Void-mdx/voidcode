@@ -51,7 +51,7 @@ async function uploadAvatar(file) {
     const storage = getStorage()
     const { ID, Permission, Role } = Appwrite
     const result = await storage.createFile(
-        CONFIG.storage.avatarsBucketId,
+        CONFIG.storage.uploadsBucketId,
         ID.unique(),
         file,
         [Permission.read(Role.any())]
@@ -63,12 +63,12 @@ function getAvatarFileUrl(fileId) {
     if (!fileId) return ''
     try {
         const storage = getStorage()
-        const url = storage.getFilePreview(CONFIG.storage.avatarsBucketId, fileId, 200, 200)
+        const url = storage.getFilePreview(CONFIG.storage.uploadsBucketId, fileId, 200, 200)
         return url.toString()
     } catch {
         try {
             const storage = getStorage()
-            return storage.getFileView(CONFIG.storage.avatarsBucketId, fileId).toString()
+            return storage.getFileView(CONFIG.storage.uploadsBucketId, fileId).toString()
         } catch {
             return ''
         }

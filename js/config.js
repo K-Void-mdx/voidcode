@@ -37,7 +37,7 @@ const CONFIG = {
     },
 
     storage: {
-        avatarsBucketId: 'uploads'
+        uploadsBucketId: '6a54c7ea00173643fdca'
     },
 
     ai: {
