@@ -74,7 +74,8 @@ function formatCourseDoc(doc) {
         color: '#C9922A',
         popular: false,
         rating: 4.5,
-        lessons: []
+        lessons: [],
+        image_url: doc.image_url || ''
     }
 }
 

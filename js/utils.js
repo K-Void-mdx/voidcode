@@ -93,3 +93,20 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;')
 }
+
+function formatAiResponse(text) {
+    if (!text) return ''
+    let html = escapeHtml(text)
+
+    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, function(match, lang, code) {
+        return '<div class="code-block"><div class="code-header"><span>' + (lang || 'code') + '</span><button onclick="copyCode(this)">Copy</button></div><pre>' + code.trim() + '</pre></div>'
+    })
+
+    html = html.replace(/`([^`\n]+)`/g, '<code style="background:var(--surface-2);padding:0.15em 0.4em;border-radius:4px;font-family:JetBrains Mono,monospace;font-size:0.85em">$1</code>')
+
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+
+    html = html.replace(/\n/g, '<br>')
+
+    return html
+}

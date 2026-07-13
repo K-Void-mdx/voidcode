@@ -60,10 +60,17 @@ async function uploadAvatar(file) {
 }
 
 function getAvatarFileUrl(fileId) {
+    if (!fileId) return ''
     try {
         const storage = getStorage()
-        return storage.getFileView(CONFIG.storage.avatarsBucketId, fileId).toString()
+        const url = storage.getFilePreview(CONFIG.storage.avatarsBucketId, fileId, 200, 200)
+        return url.toString()
     } catch {
-        return ''
+        try {
+            const storage = getStorage()
+            return storage.getFileView(CONFIG.storage.avatarsBucketId, fileId).toString()
+        } catch {
+            return ''
+        }
     }
 }

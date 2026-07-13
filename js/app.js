@@ -670,9 +670,12 @@ async function courseCardMini(course, progress) {
     const pct = progress || 0
     const initials = course.title.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
     const bm = _user ? await isBookmarked(course.id) : false
+    const thumbContent = course.image_url
+        ? '<img src="' + course.image_url + '" style="width:100%;height:100%;object-fit:cover">'
+        : '<div class="course-initials" style="color:' + course.color + '">' + initials + '</div>'
     return '<div class="course-card" onclick="navigate(\'course\',\'' + course.id + '\')">' +
-        '<div class="course-card-thumb" style="background:' + course.color + '22;border-bottom:3px solid ' + course.color + '">' +
-        '<div class="course-initials" style="color:' + course.color + '">' + initials + '</div>' +
+        '<div class="course-card-thumb" style="background:' + (course.image_url ? 'var(--surface-2)' : course.color + '22') + ';border-bottom:3px solid ' + course.color + '">' +
+        thumbContent +
         (course.popular ? '<span class="course-card-badge">Popular</span>' : '') +
         '</div>' +
         '<div class="course-card-body">' +
@@ -834,15 +837,6 @@ function renderAiTutor(app) {
             <div class="ai-header">
                 <h1>VOID Assistant</h1>
                 <p>Your AI programming tutor — ask anything about code, concepts, or courses.</p>
-                <div class="ai-provider-select">
-                    <label class="form-label">Provider</label>
-                    <select class="form-input" style="width:auto" onchange="setAiProvider(this.value)">
-                        <option value="groq">Groq (Fast)</option>
-                        <option value="openrouter">OpenRouter</option>
-                        <option value="gemini">Gemini</option>
-                        <option value="opencodezen">OpenCode Zen</option>
-                    </select>
-                </div>
             </div>
             <div class="ai-messages" id="ai-messages">
                 <div class="ai-msg ai-msg-assistant">
@@ -877,7 +871,7 @@ function renderAiTutor(app) {
         msgs.scrollTop = msgs.scrollHeight
         try {
             const reply = await askVoidAssistant(msg)
-            loadDiv.innerHTML = '<div class="ai-msg-content">' + escapeHtml(reply) + '</div>'
+            loadDiv.innerHTML = '<div class="ai-msg-content">' + formatAiResponse(reply) + '</div>'
         } catch (e) {
             loadDiv.innerHTML = '<div class="ai-msg-content ai-error">Error: ' + escapeHtml(e.message) + '</div>'
         }
@@ -1006,9 +1000,15 @@ function renderProfileEdit(app) {
             } else if (window._editPfpFile) {
                 try {
                     const fileId = await uploadAvatar(window._editPfpFile)
-                    updates.avatar_url = getAvatarFileUrl(fileId)
+                    const url = getAvatarFileUrl(fileId)
+                    if (url) {
+                        updates.avatar_url = url
+                    } else {
+                        showToast('Upload succeeded but URL failed. Check avatars bucket.', 'error')
+                    }
                 } catch (e) {
-                    console.warn('Avatar upload failed:', e)
+                    console.error('Avatar upload failed:', e)
+                    showToast('Photo upload failed: ' + (e.message || 'Unknown error'), 'error')
                 }
             }
 

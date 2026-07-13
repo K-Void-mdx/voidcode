@@ -1,6 +1,7 @@
 let _adminCourses = []
 let _adminTab = 'courses'
 let _adminSelectedCourseId = null
+let _adminAiKeys = {}
 
 function isAdmin() {
     return !!(CONFIG.adminEmail && _user && _user.email === CONFIG.adminEmail)
@@ -27,6 +28,9 @@ async function _adminRefresh() {
     } catch (e) {
         _adminCourses = []
     }
+    try {
+        _adminAiKeys = JSON.parse(localStorage.getItem('kvoid_ai_keys') || '{}')
+    } catch { _adminAiKeys = {} }
     _adminRender()
 }
 
@@ -61,6 +65,9 @@ function _adminRender() {
         <button class="admin-tab ${_adminTab === 'lessons' ? 'active' : ''}" onclick="adminSetTab('lessons')">
           Lessons${selCourse ? ' — ' + escapeHtml(selCourse.course_title || '') : ''}
         </button>
+        <button class="admin-tab ${_adminTab === 'ai' ? 'active' : ''}" onclick="adminSetTab('ai')">
+          AI Settings
+        </button>
       </div>
 
       <div id="admin-content"></div>
@@ -76,7 +83,7 @@ function _adminRender() {
       </div>
     </div>`
 
-    _adminTab === 'courses' ? _renderAdminCourses() : _renderAdminLessons()
+    _adminTab === 'courses' ? _renderAdminCourses() : _adminTab === 'lessons' ? _renderAdminLessons() : _renderAdminAi()
 }
 
 function _renderAdminCourses() {
@@ -89,7 +96,9 @@ function _renderAdminCourses() {
     el.innerHTML = _adminCourses.map(c => `
     <div class="admin-card" style="border-left:4px solid #D4A842">
       <div class="admin-card-main">
-        <div class="admin-card-icon" style="background:#D4A84222;color:#D4A842">◇</div>
+        ${c.image_url
+          ? '<div class="admin-card-icon" style="background:transparent;overflow:hidden;padding:0"><img src="' + c.image_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:4px"></div>'
+          : '<div class="admin-card-icon" style="background:#D4A84222;color:#D4A842">◇</div>'}
         <div class="admin-card-info">
           <div class="admin-card-title">${escapeHtml(c.course_title || '')}</div>
           <div class="admin-card-meta">${escapeHtml(c.difficulty || '')} · ${escapeHtml(c.category || '')} · ${c.estimated_hours || 0}h</div>
@@ -213,6 +222,15 @@ function _showCourseModal(course) {
     </div>
     <form onsubmit="adminSaveCourse(event)" style="display:flex;flex-direction:column;gap:0.75rem">
       <input type="hidden" id="ac-docid" value="${isEdit ? course.$id : ''}">
+      <input type="hidden" id="ac-image-url" value="${escapeHtml(course?.image_url || '')}">
+      <div class="form-group" style="text-align:center">
+        <label class="form-label">Course Image</label>
+        <div id="ac-image-preview" onclick="document.getElementById('ac-image-input').click()" style="width:120px;height:80px;border-radius:8px;margin:0 auto;cursor:pointer;overflow:hidden;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;background:var(--surface-2)">
+          ${course?.image_url ? '<img src="' + course.image_url + '" style="width:100%;height:100%;object-fit:cover">' : '<span style="font-size:2rem;color:var(--text-dim)">+</span>'}
+        </div>
+        <input type="file" id="ac-image-input" accept="image/*" style="display:none" onchange="adminPreviewCourseImage(event)">
+        <p style="font-size:0.75rem;color:var(--text-dim);margin-top:0.3rem">Click to upload (optional)</p>
+      </div>
       <div class="form-group">
         <label class="form-label">Slug *</label>
         <input class="form-input" id="ac-slug" required placeholder="python" value="${escapeHtml(course?.slug || '')}">
@@ -271,6 +289,31 @@ function _showCourseModal(course) {
       </div>
     </form>`
     modal.style.display = 'flex'
+
+    window.adminPreviewCourseImage = async function(e) {
+        const file = e.target.files[0]
+        if (!file) return
+        const preview = document.getElementById('ac-image-preview')
+        const urlInput = document.getElementById('ac-image-url')
+        if (preview) preview.innerHTML = '<div style="color:var(--text-dim);font-size:0.8rem">Uploading...</div>'
+        try {
+            const storage = getStorage()
+            const { ID, Permission, Role } = Appwrite
+            const result = await storage.createFile(
+                CONFIG.storage.courseImagesBucketId,
+                ID.unique(),
+                file,
+                [Permission.read(Role.any())]
+            )
+            const fileUrl = storage.getFilePreview(CONFIG.storage.courseImagesBucketId, result.$id, 400, 250).toString()
+            if (urlInput) urlInput.value = fileUrl
+            if (preview) preview.innerHTML = '<img src="' + fileUrl + '" style="width:100%;height:100%;object-fit:cover">'
+        } catch (err) {
+            console.error('Image upload failed:', err)
+            showToast('Image upload failed: ' + err.message + '. Make sure course-images bucket exists.', 'error')
+            if (preview) preview.innerHTML = '<span style="font-size:2rem;color:var(--text-dim)">+</span>'
+        }
+    }
 }
 
 window.adminSaveCourse = async function(e) {
@@ -289,7 +332,8 @@ window.adminSaveCourse = async function(e) {
         total_lessons: 0,
         certificate_available: document.getElementById('ac-cert')?.checked || false,
         published: document.getElementById('ac-published')?.checked || false,
-        created_by: _user?.email || 'admin'
+        created_by: _user?.email || 'admin',
+        image_url: document.getElementById('ac-image-url')?.value || ''
     }
     try {
         initDb()
@@ -501,4 +545,99 @@ window.adminSaveLesson = async function(e) {
 window.adminCloseModals = function(e) {
     if (e.target === document.getElementById('admin-course-modal')) document.getElementById('admin-course-modal').style.display = 'none'
     if (e.target === document.getElementById('admin-lesson-modal')) document.getElementById('admin-lesson-modal').style.display = 'none'
+}
+
+function _renderAdminAi() {
+    const el = document.getElementById('admin-content')
+    if (!el) return
+
+    const providers = [
+        { key: 'GROQ_API_KEY', name: 'Groq', desc: 'Fast inference, Llama models', test: 'https://api.groq.com/openai/v1/chat/completions' },
+        { key: 'OPENROUTER_API_KEY', name: 'OpenRouter', desc: 'Multi-model gateway', test: 'https://openrouter.ai/api/v1/chat/completions' },
+        { key: 'GEMINI_API_KEY', name: 'Google Gemini', desc: 'Gemini 2.0 Flash', test: 'https://generativelanguage.googleapis.com' },
+        { key: 'OPENCODE_ZEN_API_KEY', name: 'OpenCode Zen', desc: 'Zen coding model', test: 'https://zen.opencode.ai/v1/chat/completions' }
+    ]
+
+    el.innerHTML = `
+    <div style="max-width:700px">
+        <div class="admin-notice" style="margin-bottom:1.5rem">
+            API keys are stored in your browser (localStorage). They are used by the AI proxy at <code>/api/ai</code>. Students never see these keys.
+        </div>
+        <h3 style="margin-bottom:1rem;font-weight:700">AI Provider Keys</h3>
+        ${providers.map(p => {
+            const val = _adminAiKeys[p.key] || ''
+            const masked = val ? val.slice(0, 8) + '...' + val.slice(-4) : ''
+            return `
+            <div class="admin-card" style="border-left:4px solid ${val ? '#22c55e' : '#ef4444'}">
+                <div class="admin-card-main">
+                    <div class="admin-card-icon" style="background:${val ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'};color:${val ? '#22c55e' : '#ef4444'};font-size:1.2rem">${val ? '✓' : '✗'}</div>
+                    <div class="admin-card-info">
+                        <div class="admin-card-title">${p.name}</div>
+                        <div class="admin-card-meta">${p.desc}</div>
+                        ${val ? '<div class="admin-card-id" style="font-family:monospace">' + masked + '</div>' : '<div class="admin-card-id" style="color:#ef4444">No key set</div>'}
+                    </div>
+                </div>
+                <div class="admin-card-actions">
+                    <button class="btn btn-ghost btn-sm" onclick="adminEditAiKey('${p.key}','${p.name}')">${val ? 'Change' : 'Add Key'}</button>
+                    ${val ? '<button class="btn btn-danger btn-sm" onclick="adminRemoveAiKey(\'' + p.key + '\')">Remove</button>' : ''}
+                </div>
+            </div>`
+        }).join('')}
+        <div style="margin-top:1.5rem">
+            <button class="btn btn-secondary btn-sm" onclick="adminTestAiKeys()">Test All Keys</button>
+            <div id="ai-test-result" style="margin-top:0.5rem;font-size:0.85rem;color:var(--text-secondary)"></div>
+        </div>
+    </div>`
+}
+
+window.adminEditAiKey = function(key, name) {
+    const current = _adminAiKeys[key] || ''
+    const val = prompt('Enter API key for ' + name + ':', current)
+    if (val === null) return
+    if (val.trim()) {
+        _adminAiKeys[key] = val.trim()
+    } else {
+        delete _adminAiKeys[key]
+    }
+    localStorage.setItem('kvoid_ai_keys', JSON.stringify(_adminAiKeys))
+    showToast('Key saved for ' + name, 'success')
+    _adminRefresh()
+}
+
+window.adminRemoveAiKey = function(key) {
+    if (!confirm('Remove this API key?')) return
+    delete _adminAiKeys[key]
+    localStorage.setItem('kvoid_ai_keys', JSON.stringify(_adminAiKeys))
+    showToast('Key removed', 'success')
+    _adminRefresh()
+}
+
+window.adminTestAiKeys = async function() {
+    const result = document.getElementById('ai-test-result')
+    if (result) result.textContent = 'Testing...'
+    const keys = Object.keys(_adminAiKeys)
+    if (!keys.length) {
+        if (result) result.textContent = 'No keys to test. Add at least one.'
+        return
+    }
+    const results = []
+    for (const key of keys) {
+        const provider = key.replace('_API_KEY', '').toLowerCase()
+        try {
+            const resp = await fetch('/api/ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: 'Say "ok" in one word.', provider })
+            })
+            if (resp.ok) {
+                results.push(provider + ': ✓ working')
+            } else {
+                const err = await resp.json().catch(() => ({}))
+                results.push(provider + ': ✗ ' + (err.error || resp.status))
+            }
+        } catch (e) {
+            results.push(provider + ': ✗ ' + e.message)
+        }
+    }
+    if (result) result.textContent = results.join(' | ')
 }

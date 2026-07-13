@@ -1,4 +1,4 @@
-let _aiProvider = CONFIG.ai.defaultProvider
+let _aiProvider = null
 
 function setAiProvider(provider) {
     _aiProvider = provider
@@ -9,8 +9,14 @@ function getAiProvider() {
     return _aiProvider
 }
 
+function _getAdminAiKeys() {
+    try { return JSON.parse(localStorage.getItem('kvoid_ai_keys') || '{}') }
+    catch { return {} }
+}
+
 async function askVoidAssistant(message, context) {
     const courseContext = context || await getConversationContext()
+    const keys = _getAdminAiKeys()
 
     const resp = await fetch(CONFIG.ai.proxyEndpoint, {
         method: 'POST',
@@ -18,7 +24,8 @@ async function askVoidAssistant(message, context) {
         body: JSON.stringify({
             message,
             context: courseContext,
-            provider: _aiProvider
+            provider: _aiProvider || undefined,
+            keys: Object.keys(keys).length ? keys : undefined
         })
     })
 
@@ -28,7 +35,7 @@ async function askVoidAssistant(message, context) {
     }
 
     const data = await resp.json()
-    if (data.provider && data.provider !== _aiProvider) {
+    if (data.provider) {
         _aiProvider = data.provider
     }
     return data.reply

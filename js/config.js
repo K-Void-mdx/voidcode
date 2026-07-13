@@ -37,7 +37,8 @@ const CONFIG = {
     },
 
     storage: {
-        avatarsBucketId: 'avatars'
+        avatarsBucketId: 'avatars',
+        courseImagesBucketId: 'course-images'
     },
 
     ai: {
