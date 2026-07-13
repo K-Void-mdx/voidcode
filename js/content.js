@@ -9,12 +9,16 @@ async function fetchCourses(force) {
         const res = await db.listDocuments(CONFIG.database.id, CONFIG.database.collections.courses)
         _coursesCache = (res.documents || []).map(formatCourseDoc)
 
+        const docIdToSlug = {}
+        for (const c of _coursesCache) docIdToSlug[c.$id] = c.id
+
         const allLessonsRes = await db.listDocuments(CONFIG.database.id, CONFIG.database.collections.lessons)
         const allLessons = (allLessonsRes.documents || []).map(formatLessonDoc)
         _lessonsCache = {}
         for (const l of allLessons) {
-            if (!_lessonsCache[l.courseId]) _lessonsCache[l.courseId] = []
-            _lessonsCache[l.courseId].push(l)
+            const key = docIdToSlug[l.courseId] || l.courseId
+            if (!_lessonsCache[key]) _lessonsCache[key] = []
+            _lessonsCache[key].push(l)
         }
         for (const c of _coursesCache) c.lessons = _lessonsCache[c.id] || []
         return _coursesCache
@@ -35,10 +39,11 @@ async function fetchLessons(courseId, force) {
         initDb()
         const db = getDb()
         const Query = getQuery()
+        const courseDocId = getCourseDocId(courseId) || courseId
         const res = await db.listDocuments(
             CONFIG.database.id,
             CONFIG.database.collections.lessons,
-            [Query.equal('courseId', courseId), Query.orderAsc('order')]
+            [Query.equal('courses', courseDocId), Query.orderAsc('lesson_order')]
         )
         const lessons = (res.documents || []).map(formatLessonDoc)
         _lessonsCache[courseId] = lessons
@@ -58,47 +63,87 @@ async function fetchLesson(courseId, lessonId) {
 function formatCourseDoc(doc) {
     return {
         $id: doc.$id,
-        id: doc.id || doc.$id,
-        title: doc.title || '',
-        icon: doc.icon || '',
-        subtitle: doc.subtitle || '',
-        desc: doc.description || doc.desc || '',
+        id: doc.slug || doc.$id,
+        title: doc.course_title || '',
+        icon: '',
+        subtitle: '',
+        desc: doc.description || '',
         difficulty: doc.difficulty || 'Beginner',
-        duration: doc.duration || '',
+        duration: doc.estimated_hours ? doc.estimated_hours + ' hours' : '',
         category: doc.category || '',
-        color: doc.color || '#C9922A',
-        popular: !!doc.popular,
-        rating: parseFloat(doc.rating) || 4.5,
+        color: '#C9922A',
+        popular: false,
+        rating: 4.5,
         lessons: []
     }
 }
 
 function formatLessonDoc(doc) {
     let concepts = []
+    let summary = []
     try {
-        if (Array.isArray(doc.concepts)) {
-            concepts = doc.concepts.map(c => {
+        const contentData = JSON.parse(doc.content || '{}')
+        if (contentData.concepts) {
+            concepts = contentData.concepts.map(c => {
                 if (typeof c === 'string') return JSON.parse(c)
                 return c
             }).filter(c => c && c.title)
         }
-    } catch {}
-
-    let summary = []
-    if (Array.isArray(doc.summary)) summary = doc.summary.filter(Boolean)
+        if (contentData.summary) summary = contentData.summary.filter(Boolean)
+    } catch {
+        try { concepts = JSON.parse(doc.content || '[]') } catch {}
+    }
 
     return {
         $id: doc.$id,
-        id: doc.id || doc.$id,
-        courseId: doc.courseId || '',
-        title: doc.title || '',
-        icon: doc.icon || '',
-        desc: doc.description || doc.desc || '',
+        id: doc.slug || doc.$id,
+        courseId: getCourseSlug(doc.courses) || doc.courses || '',
+        title: doc.lesson_title || '',
+        icon: '',
+        desc: doc.description || '',
         concepts,
         summary,
-        quiz: doc.quiz || null,
-        order: parseInt(doc.order) || 0
+        quiz: null,
+        order: parseInt(doc.lesson_order) || 0
     }
 }
 
 function clearContentCache() { _coursesCache = null; _lessonsCache = {} }
+
+function getLessonDocId(slug) {
+    for (const lessons of Object.values(_lessonsCache)) {
+        const found = lessons.find(l => l.id === slug)
+        if (found) return found.$id
+    }
+    return null
+}
+
+function getLessonSlug(docId) {
+    for (const lessons of Object.values(_lessonsCache)) {
+        const found = lessons.find(l => l.$id === docId)
+        if (found) return found.id
+    }
+    return null
+}
+
+function getCourseDocId(slug) {
+    if (!_coursesCache) return null
+    const found = _coursesCache.find(c => c.id === slug)
+    return found ? found.$id : null
+}
+
+function getCourseSlug(docId) {
+    if (!_coursesCache) return null
+    const found = _coursesCache.find(c => c.$id === docId)
+    return found ? found.id : null
+}
+
+function getLessonCourseMap() {
+    const map = {}
+    for (const [courseSlug, lessons] of Object.entries(_lessonsCache)) {
+        for (const l of lessons) {
+            map[l.$id] = courseSlug
+        }
+    }
+    return map
+}

@@ -59,7 +59,7 @@ function _adminRender() {
           Courses <span class="badge">${_adminCourses.length}</span>
         </button>
         <button class="admin-tab ${_adminTab === 'lessons' ? 'active' : ''}" onclick="adminSetTab('lessons')">
-          Lessons${selCourse ? ' — ' + escapeHtml(selCourse.title) : ''}
+          Lessons${selCourse ? ' — ' + escapeHtml(selCourse.course_title || '') : ''}
         </button>
       </div>
 
@@ -87,13 +87,13 @@ function _renderAdminCourses() {
         return
     }
     el.innerHTML = _adminCourses.map(c => `
-    <div class="admin-card" style="border-left:4px solid ${escapeHtml(c.color || '#D4A842')}">
+    <div class="admin-card" style="border-left:4px solid #D4A842">
       <div class="admin-card-main">
-        <div class="admin-card-icon" style="background:${escapeHtml(c.color || '#D4A842')}22;color:${escapeHtml(c.color || '#D4A842')}">${escapeHtml(c.icon || '◇')}</div>
+        <div class="admin-card-icon" style="background:#D4A84222;color:#D4A842">◇</div>
         <div class="admin-card-info">
-          <div class="admin-card-title">${escapeHtml(c.title)}</div>
-          <div class="admin-card-meta">${escapeHtml(c.difficulty || 'Beginner')} · ${escapeHtml(c.category || '')} · ${escapeHtml(c.duration || '')}</div>
-          <div class="admin-card-id">ID: ${escapeHtml(c.id || c.$id)}</div>
+          <div class="admin-card-title">${escapeHtml(c.course_title || '')}</div>
+          <div class="admin-card-meta">${escapeHtml(c.difficulty || '')} · ${escapeHtml(c.category || '')} · ${c.estimated_hours || 0}h</div>
+          <div class="admin-card-id">Slug: ${escapeHtml(c.slug || c.$id)}</div>
         </div>
       </div>
       <div class="admin-card-actions">
@@ -111,7 +111,7 @@ async function _renderAdminLessons() {
     if (!_adminSelectedCourseId) {
         el.innerHTML = `<div class="admin-empty"><p>Select a course to manage its lessons.</p>
         <div style="display:flex;flex-wrap:wrap;gap:0.5rem;justify-content:center;margin-top:1rem">
-          ${_adminCourses.map(c => `<button class="btn btn-secondary btn-sm" onclick="adminManageLessons('${c.$id}')">${escapeHtml(c.title)}</button>`).join('')}
+          ${_adminCourses.map(c => `<button class="btn btn-secondary btn-sm" onclick="adminManageLessons('${c.$id}')">${escapeHtml(c.course_title || '')}</button>`).join('')}
         </div></div>`
         return
     }
@@ -124,7 +124,7 @@ async function _renderAdminLessons() {
         const res = await db.listDocuments(
             CONFIG.database.id,
             CONFIG.database.collections.lessons,
-            [Query.equal('courseId', _adminSelectedCourseId), Query.orderAsc('order')]
+            [Query.equal('courses', _adminSelectedCourseId), Query.orderAsc('lesson_order')]
         )
         const lessons = res.documents || []
         if (!lessons.length) {
@@ -134,11 +134,11 @@ async function _renderAdminLessons() {
         el.innerHTML = lessons.map(l => `
         <div class="admin-card">
           <div class="admin-card-main">
-            <div class="admin-card-icon">${escapeHtml(l.icon || '◈')}</div>
+            <div class="admin-card-icon">◈</div>
             <div class="admin-card-info">
-              <div class="admin-card-title">#${l.order || 0} — ${escapeHtml(l.title)}</div>
+              <div class="admin-card-title">#${l.lesson_order || 0} — ${escapeHtml(l.lesson_title || '')}</div>
               <div class="admin-card-meta">${escapeHtml(l.description || '')}</div>
-              <div class="admin-card-id">ID: ${escapeHtml(l.id || l.$id)}</div>
+              <div class="admin-card-id">Slug: ${escapeHtml(l.slug || l.$id)}</div>
             </div>
           </div>
           <div class="admin-card-actions">
@@ -213,59 +213,57 @@ function _showCourseModal(course) {
     </div>
     <form onsubmit="adminSaveCourse(event)" style="display:flex;flex-direction:column;gap:0.75rem">
       <input type="hidden" id="ac-docid" value="${isEdit ? course.$id : ''}">
-      <div class="form-row-2">
-        <div class="form-group">
-          <label class="form-label">Course ID (slug) *</label>
-          <input class="form-input" id="ac-id" required placeholder="python" value="${escapeHtml(course?.id || '')}">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Icon (emoji) *</label>
-          <input class="form-input" id="ac-icon" required placeholder="🐍" value="${escapeHtml(course?.icon || '')}" maxlength="4">
-        </div>
+      <div class="form-group">
+        <label class="form-label">Slug *</label>
+        <input class="form-input" id="ac-slug" required placeholder="python" value="${escapeHtml(course?.slug || '')}">
       </div>
       <div class="form-group">
-        <label class="form-label">Title *</label>
-        <input class="form-input" id="ac-title" required placeholder="Python Programming" value="${escapeHtml(course?.title || '')}">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Subtitle</label>
-        <input class="form-input" id="ac-subtitle" placeholder="Beginner to Intermediate" value="${escapeHtml(course?.subtitle || '')}">
+        <label class="form-label">Course Title *</label>
+        <input class="form-input" id="ac-title" required placeholder="Python Programming" value="${escapeHtml(course?.course_title || '')}">
       </div>
       <div class="form-group">
         <label class="form-label">Description *</label>
-        <textarea class="form-input" id="ac-desc" rows="2" placeholder="Short description of the course" required>${escapeHtml(course?.description || course?.desc || '')}</textarea>
+        <textarea class="form-input" id="ac-desc" rows="2" placeholder="Short description of the course" required>${escapeHtml(course?.description || '')}</textarea>
       </div>
       <div class="form-row-2">
         <div class="form-group">
-          <label class="form-label">Difficulty</label>
-          <select class="form-input" id="ac-difficulty">
+          <label class="form-label">Difficulty *</label>
+          <select class="form-input" id="ac-difficulty" required>
             ${['Beginner','Intermediate','Advanced'].map(d => `<option value="${d}" ${(course?.difficulty === d) ? 'selected' : ''}>${d}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Duration</label>
-          <input class="form-input" id="ac-duration" placeholder="3 hours" value="${escapeHtml(course?.duration || '')}">
+          <label class="form-label">Category *</label>
+          <input class="form-input" id="ac-category" required placeholder="General Purpose" value="${escapeHtml(course?.category || '')}">
         </div>
       </div>
       <div class="form-row-2">
         <div class="form-group">
-          <label class="form-label">Category</label>
-          <input class="form-input" id="ac-category" placeholder="General Purpose" value="${escapeHtml(course?.category || '')}">
+          <label class="form-label">Estimated Hours *</label>
+          <input class="form-input" id="ac-hours" type="number" min="1" required placeholder="3" value="${course?.estimated_hours || ''}">
         </div>
         <div class="form-group">
-          <label class="form-label">Color (hex)</label>
-          <input class="form-input" id="ac-color" placeholder="#3776AB" value="${escapeHtml(course?.color || '#C9922A')}">
+          <label class="form-label">Instructor *</label>
+          <input class="form-input" id="ac-instructor" required placeholder="K-VOID" value="${escapeHtml(course?.instructor || 'K-VOID')}">
         </div>
       </div>
       <div class="form-row-2">
         <div class="form-group">
-          <label class="form-label">Rating (0-5)</label>
-          <input class="form-input" id="ac-rating" type="number" min="0" max="5" step="0.1" placeholder="4.5" value="${course?.rating || 4.5}">
+          <label class="form-label">Language *</label>
+          <input class="form-input" id="ac-language" required placeholder="Python" value="${escapeHtml(course?.language || '')}">
         </div>
-        <div class="form-group" style="display:flex;align-items:center;gap:0.5rem;padding-top:1.75rem">
-          <input type="checkbox" id="ac-popular" ${course?.popular ? 'checked' : ''} style="width:1rem;height:1rem;accent-color:var(--primary)">
-          <label for="ac-popular" class="form-label" style="margin:0">Popular course</label>
+        <div class="form-group">
+          <label class="form-label">XP Reward *</label>
+          <input class="form-input" id="ac-xp" type="number" min="0" required placeholder="50" value="${course?.xp_reward || 50}">
         </div>
+      </div>
+      <div style="display:flex;gap:1.5rem;align-items:center;padding:0.25rem 0">
+        <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.85rem">
+          <input type="checkbox" id="ac-published" ${course?.published !== false ? 'checked' : ''} style="accent-color:var(--primary)"> Published
+        </label>
+        <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.85rem">
+          <input type="checkbox" id="ac-cert" ${course?.certificate_available !== false ? 'checked' : ''} style="accent-color:var(--primary)"> Certificate Available
+        </label>
       </div>
       <div style="display:flex;gap:0.75rem;justify-content:flex-end;margin-top:0.5rem">
         <button type="button" class="btn btn-secondary" onclick="document.getElementById('admin-course-modal').style.display='none'">Cancel</button>
@@ -279,17 +277,19 @@ window.adminSaveCourse = async function(e) {
     e.preventDefault()
     const docId = document.getElementById('ac-docid')?.value
     const data = {
-        id: document.getElementById('ac-id')?.value.trim(),
-        icon: document.getElementById('ac-icon')?.value.trim(),
-        title: document.getElementById('ac-title')?.value.trim(),
-        subtitle: document.getElementById('ac-subtitle')?.value.trim(),
+        slug: document.getElementById('ac-slug')?.value.trim(),
+        course_title: document.getElementById('ac-title')?.value.trim(),
         description: document.getElementById('ac-desc')?.value.trim(),
         difficulty: document.getElementById('ac-difficulty')?.value,
-        duration: document.getElementById('ac-duration')?.value.trim(),
         category: document.getElementById('ac-category')?.value.trim(),
-        color: document.getElementById('ac-color')?.value.trim(),
-        rating: parseFloat(document.getElementById('ac-rating')?.value) || 4.5,
-        popular: document.getElementById('ac-popular')?.checked || false
+        estimated_hours: parseInt(document.getElementById('ac-hours')?.value) || 1,
+        instructor: document.getElementById('ac-instructor')?.value.trim() || 'K-VOID',
+        language: document.getElementById('ac-language')?.value.trim() || 'General',
+        xp_reward: parseInt(document.getElementById('ac-xp')?.value) || 50,
+        total_lessons: 0,
+        certificate_available: document.getElementById('ac-cert')?.checked || false,
+        published: document.getElementById('ac-published')?.checked || false,
+        created_by: _user?.email || 'admin'
     }
     try {
         initDb()
@@ -314,18 +314,26 @@ function _showLessonModal(lesson) {
     const body = document.getElementById('admin-lesson-modal-body')
     if (!modal || !body) return
     const isEdit = !!lesson
-    const courseId = lesson?.courseId || _adminSelectedCourseId || ''
+
+    let courseDocId = _adminSelectedCourseId || ''
+    if (lesson?.courses) {
+        courseDocId = lesson.courses
+    }
 
     let existingConcepts = []
     try {
-        if (Array.isArray(lesson?.concepts)) {
-            existingConcepts = lesson.concepts.map(c => typeof c === 'string' ? JSON.parse(c) : c)
+        if (lesson?.content) {
+            const contentData = JSON.parse(lesson.content)
+            if (contentData.concepts) existingConcepts = contentData.concepts.map(c => typeof c === 'string' ? JSON.parse(c) : c)
         }
     } catch {}
 
     let existingSummary = []
     try {
-        if (Array.isArray(lesson?.summary)) existingSummary = lesson.summary
+        if (lesson?.content) {
+            const contentData = JSON.parse(lesson.content)
+            if (contentData.summary) existingSummary = contentData.summary
+        }
     } catch {}
 
     body.innerHTML = `
@@ -339,32 +347,44 @@ function _showLessonModal(lesson) {
         <label class="form-label">Course *</label>
         <select class="form-input" id="al-courseid" required>
           <option value="">Select a course</option>
-          ${_adminCourses.map(c => `<option value="${c.$id}" ${c.$id === courseId ? 'selected' : ''}>${escapeHtml(c.title)}</option>`).join('')}
+          ${_adminCourses.map(c => `<option value="${c.$id}" ${c.$id === courseDocId ? 'selected' : ''}>${escapeHtml(c.course_title || '')}</option>`).join('')}
         </select>
       </div>
       <div class="form-row-2">
         <div class="form-group">
-          <label class="form-label">Lesson ID (slug) *</label>
-          <input class="form-input" id="al-id" required placeholder="py-1" value="${escapeHtml(lesson?.id || '')}">
+          <label class="form-label">Slug *</label>
+          <input class="form-input" id="al-slug" required placeholder="py-1" value="${escapeHtml(lesson?.slug || '')}">
         </div>
         <div class="form-group">
-          <label class="form-label">Order #</label>
-          <input class="form-input" id="al-order" type="number" min="1" placeholder="1" value="${lesson?.order || ''}">
-        </div>
-      </div>
-      <div class="form-row-2">
-        <div class="form-group">
-          <label class="form-label">Title *</label>
-          <input class="form-input" id="al-title" required placeholder="Hello, World!" value="${escapeHtml(lesson?.title || '')}">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Icon (emoji)</label>
-          <input class="form-input" id="al-icon" placeholder="🌍" value="${escapeHtml(lesson?.icon || '')}" maxlength="4">
+          <label class="form-label">Order # *</label>
+          <input class="form-input" id="al-order" type="number" min="1" required placeholder="1" value="${lesson?.lesson_order || ''}">
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Short Description</label>
-        <input class="form-input" id="al-desc" placeholder="Your first program" value="${escapeHtml(lesson?.description || lesson?.desc || '')}">
+        <label class="form-label">Title *</label>
+        <input class="form-input" id="al-title" required placeholder="Hello, World!" value="${escapeHtml(lesson?.lesson_title || '')}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description *</label>
+        <input class="form-input" id="al-desc" placeholder="Your first program" value="${escapeHtml(lesson?.description || '')}">
+      </div>
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label">Estimated Minutes *</label>
+          <input class="form-input" id="al-minutes" type="number" min="1" required placeholder="15" value="${lesson?.estimated_minutes || ''}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">XP Reward *</label>
+          <input class="form-input" id="al-xp" type="number" min="0" required placeholder="50" value="${lesson?.xp_reward || 50}">
+        </div>
+      </div>
+      <div style="display:flex;gap:1.5rem;align-items:center;padding:0.25rem 0">
+        <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.85rem">
+          <input type="checkbox" id="al-published" ${lesson?.published !== false ? 'checked' : ''} style="accent-color:var(--primary)"> Published
+        </label>
+        <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.85rem">
+          <input type="checkbox" id="al-free" ${lesson?.is_free !== false ? 'checked' : ''} style="accent-color:var(--primary)"> Free
+        </label>
       </div>
 
       <div class="admin-section-label">Concepts <button type="button" class="btn btn-secondary btn-sm" onclick="adminAddConcept()" style="margin-left:0.5rem">+ Add</button></div>
@@ -428,31 +448,35 @@ window.adminSaveLesson = async function(e) {
     e.preventDefault()
     const docId = document.getElementById('al-docid')?.value
     const courseDocId = document.getElementById('al-courseid')?.value
-    const course = _adminCourses.find(c => c.$id === courseDocId)
 
     const conceptBlocks = document.getElementById('al-concepts')?.querySelectorAll('.concept-block') || []
     const concepts = Array.from(conceptBlocks).map(block => {
         const inputs = block.querySelectorAll('input, textarea')
-        return JSON.stringify({
+        return {
             title: inputs[0]?.value?.trim() || '',
             text: inputs[1]?.value?.trim() || '',
             code: inputs[2]?.value?.trim() || '',
             classwork: inputs[3]?.value?.trim() || ''
-        })
-    }).filter(c => { try { return JSON.parse(c).title; } catch { return false; } })
+        }
+    }).filter(c => c.title)
 
     const summaryInputs = document.getElementById('al-summary')?.querySelectorAll('input') || []
     const summary = Array.from(summaryInputs).map(i => i.value.trim()).filter(Boolean)
 
+    const contentPayload = JSON.stringify({ concepts, summary })
+
     const data = {
-        id: document.getElementById('al-id')?.value.trim(),
-        courseId: courseDocId,
-        title: document.getElementById('al-title')?.value.trim(),
-        icon: document.getElementById('al-icon')?.value.trim(),
+        courses: courseDocId,
+        slug: document.getElementById('al-slug')?.value.trim(),
+        lesson_title: document.getElementById('al-title')?.value.trim(),
+        lesson_order: parseInt(document.getElementById('al-order')?.value) || 1,
         description: document.getElementById('al-desc')?.value.trim(),
-        order: parseInt(document.getElementById('al-order')?.value) || 1,
-        concepts,
-        summary
+        content: contentPayload,
+        lesson_type: 'theory',
+        estimated_minutes: parseInt(document.getElementById('al-minutes')?.value) || 15,
+        xp_reward: parseInt(document.getElementById('al-xp')?.value) || 50,
+        is_free: document.getElementById('al-free')?.checked ?? true,
+        published: document.getElementById('al-published')?.checked ?? false
     }
 
     try {

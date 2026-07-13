@@ -7,10 +7,12 @@ async function fetchSettings(userId, force) {
     const Query = getQuery()
     const { ID, Permission, Role } = Appwrite
     try {
+        const profileDocId = _profile?.$id
+        if (!profileDocId) return null
         const res = await db.listDocuments(
             CONFIG.database.id,
             CONFIG.database.collections.settings,
-            [Query.equal('userId', userId)]
+            [Query.equal('profiles', profileDocId)]
         )
         if (res.documents.length) {
             _settingsCache = res.documents[0]
@@ -20,7 +22,17 @@ async function fetchSettings(userId, force) {
             CONFIG.database.id,
             CONFIG.database.collections.settings,
             ID.unique(),
-            { userId, preferences: '{}', created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+            {
+                profiles: profileDocId,
+                theme: 'dark',
+                preferred_language: 'English',
+                email_notifications: true,
+                smart_revision_enabled: true,
+                daily_goal_minutes: 30,
+                ai_assistant_enabled: true,
+                accessibility_mode: 'off',
+                onboarding_completed: false
+            },
             [
                 Permission.read(Role.user(userId)),
                 Permission.update(Role.user(userId)),
@@ -41,7 +53,7 @@ async function updateSettings(userId, prefs) {
             CONFIG.database.id,
             CONFIG.database.collections.settings,
             settings.$id,
-            { preferences: JSON.stringify(prefs), updated_at: new Date().toISOString() }
+            prefs
         )
         _settingsCache = updated
         return updated
@@ -50,5 +62,13 @@ async function updateSettings(userId, prefs) {
 
 function parsePreferences(settings) {
     if (!settings) return {}
-    try { return JSON.parse(settings.preferences || '{}') } catch { return {} }
+    return {
+        theme: settings.theme || 'dark',
+        preferred_language: settings.preferred_language || 'English',
+        email_notifications: settings.email_notifications !== false,
+        smart_revision_enabled: settings.smart_revision_enabled !== false,
+        daily_goal_minutes: settings.daily_goal_minutes || 30,
+        ai_assistant_enabled: settings.ai_assistant_enabled !== false,
+        accessibility_mode: settings.accessibility_mode || 'off'
+    }
 }

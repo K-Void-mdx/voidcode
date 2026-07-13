@@ -6,12 +6,14 @@ async function fetchBookmarks(userId, force) {
     const db = getDb()
     const Query = getQuery()
     try {
+        const profileDocId = _profile?.$id
+        if (!profileDocId) { _bookmarksCache = []; return _bookmarksCache }
         const res = await db.listDocuments(
             CONFIG.database.id,
             CONFIG.database.collections.bookmarks,
-            [Query.equal('userId', userId)]
+            [Query.equal('profiles', profileDocId)]
         )
-        _bookmarksCache = (res.documents || []).map(d => d.courseId)
+        _bookmarksCache = (res.documents || []).map(d => getCourseSlug(d.courses)).filter(Boolean)
         return _bookmarksCache
     } catch { _bookmarksCache = []; return _bookmarksCache }
 }
@@ -21,11 +23,20 @@ async function addBookmark(userId, courseId) {
     const db = getDb()
     const { ID, Permission, Role } = Appwrite
     try {
+        const profileDocId = _profile?.$id
+        const courseDocId = getCourseDocId(courseId)
+        if (!profileDocId || !courseDocId) return false
         await db.createDocument(
             CONFIG.database.id,
             CONFIG.database.collections.bookmarks,
             ID.unique(),
-            { userId, courseId, created_at: new Date().toISOString() },
+            {
+                profiles: profileDocId,
+                courses: courseDocId,
+                bookmark_type: 'course',
+                favorite: false,
+                created_at: new Date().toISOString()
+            },
             [
                 Permission.read(Role.user(userId)),
                 Permission.update(Role.user(userId)),
@@ -42,10 +53,13 @@ async function removeBookmark(userId, courseId) {
     const db = getDb()
     const Query = getQuery()
     try {
+        const profileDocId = _profile?.$id
+        const courseDocId = getCourseDocId(courseId)
+        if (!profileDocId || !courseDocId) return false
         const res = await db.listDocuments(
             CONFIG.database.id,
             CONFIG.database.collections.bookmarks,
-            [Query.equal('userId', userId), Query.equal('courseId', courseId)]
+            [Query.equal('profiles', profileDocId), Query.equal('courses', courseDocId)]
         )
         if (res.documents.length) {
             await db.deleteDocument(CONFIG.database.id, CONFIG.database.collections.bookmarks, res.documents[0].$id)
@@ -84,8 +98,13 @@ async function fetchNotes(userId, lessonId) {
     const db = getDb()
     const Query = getQuery()
     try {
-        const queries = [Query.equal('userId', userId)]
-        if (lessonId) queries.push(Query.equal('lessonId', lessonId))
+        const profileDocId = _profile?.$id
+        if (!profileDocId) return []
+        const queries = [Query.equal('profiles', profileDocId)]
+        if (lessonId) {
+            const lessonDocId = getLessonDocId(lessonId)
+            if (lessonDocId) queries.push(Query.equal('lessons', lessonDocId))
+        }
         queries.push(Query.orderDesc('created_at'))
         const res = await db.listDocuments(CONFIG.database.id, CONFIG.database.collections.notes, queries)
         return res.documents || []
@@ -97,11 +116,21 @@ async function createNote(userId, lessonId, content) {
     const db = getDb()
     const { ID, Permission, Role } = Appwrite
     try {
+        const profileDocId = _profile?.$id
+        const lessonDocId = getLessonDocId(lessonId)
+        if (!profileDocId || !lessonDocId) return null
         return await db.createDocument(
             CONFIG.database.id,
             CONFIG.database.collections.notes,
             ID.unique(),
-            { userId, lessonId, content, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+            {
+                profiles: profileDocId,
+                lessons: lessonDocId,
+                content,
+                is_pinned: false,
+                color: 'default',
+                last_edited_at: new Date().toISOString()
+            },
             [
                 Permission.read(Role.user(userId)),
                 Permission.update(Role.user(userId)),
@@ -119,7 +148,7 @@ async function updateNote(noteId, content) {
             CONFIG.database.id,
             CONFIG.database.collections.notes,
             noteId,
-            { content, updated_at: new Date().toISOString() }
+            { content, last_edited_at: new Date().toISOString() }
         )
     } catch (e) { console.warn('updateNote failed:', e); return null }
 }

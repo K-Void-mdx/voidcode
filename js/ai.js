@@ -37,6 +37,6 @@ async function askVoidAssistant(message, context) {
 async function getConversationContext() {
     const courses = await fetchCourses()
     const courseInfo = courses.slice(0, 3).map(c => c.title + ' (' + c.difficulty + ', ' + c.category + ')').join(', ')
-    const userLevel = _profile?.learning_level || 'beginner'
+    const userLevel = _profile?.level || 1
     return 'Available courses: ' + courseInfo + '. User level: ' + userLevel + '.'
 }

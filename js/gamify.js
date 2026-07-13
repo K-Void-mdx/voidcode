@@ -39,12 +39,13 @@ function checkLevelUp(oldXp, newXp) {
 
 function getStreak() {
     if (!_profile) return { count: 0, lastDate: null }
-    const data = { count: _profile.streak_count || 0, lastDate: _profile.streak_last_date || null }
+    const count = _profile.streak_days || 0
+    const lastDate = localStorage.getItem('kvoid_streak_date') || null
     const today = new Date().toDateString()
-    const last = data.lastDate ? new Date(data.lastDate).toDateString() : null
+    const last = lastDate ? new Date(lastDate).toDateString() : null
     const yesterday = new Date(Date.now() - 86400000).toDateString()
-    if (last === today) return data
-    if (last === yesterday) return data
+    if (last === today) return { count, lastDate }
+    if (last === yesterday) return { count, lastDate }
     return { count: 0, lastDate: null }
 }
 
@@ -55,11 +56,11 @@ async function updateStreak() {
     const yesterday = new Date(Date.now() - 86400000).toDateString()
     let count = (s.lastDate === yesterday) ? s.count + 1 : 1
     if (count > 1) await addXp(CONFIG.limits.xpStreakBonus)
+    localStorage.setItem('kvoid_streak_date', today)
     if (_profileDocId) {
         try {
-            await updateProfile(_profileDocId, { streak_count: count, streak_last_date: today })
-            _profile.streak_count = count
-            _profile.streak_last_date = today
+            await updateProfile(_profileDocId, { streak_days: count })
+            _profile.streak_days = count
         } catch (e) { console.warn('Failed to save streak:', e) }
     }
     return count

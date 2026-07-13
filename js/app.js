@@ -444,15 +444,17 @@ window.handleCompleteProfile = async function(e) {
             first_name: fname,
             last_name: lname,
             username: uname,
-            display_name: fname + ' ' + lname,
-            gender: gender,
             bio: bio,
             avatar_url: avatarUrl,
-            learning_level: 'beginner',
-            created_at: new Date().toISOString(),
+            level: 1,
             xp: 0,
-            streak_count: 0,
-            streak_last_date: null
+            streak_days: 0,
+            completed_lessons: 0,
+            completed_courses: 0,
+            role: 'student',
+            email_verified: false,
+            onboarding_completed: true,
+            total_study_minutes: 0
         }
         const doc = await createProfile(_user.$id, profileData)
         _profile = doc
@@ -561,7 +563,7 @@ async function renderCourseDetail(app, courseId) {
 
     const lessons = course.lessons || []
     const progressDocs = _user ? await getLessonProgress(_user.$id, courseId) : []
-    const completedIds = new Set(progressDocs.map(p => p.lessonId))
+    const completedIds = new Set(progressDocs.map(p => getLessonSlug(p.lessons)).filter(Boolean))
 
     const lessonItems = lessons.map((l, i) => {
         const done = completedIds.has(l.id)
@@ -794,7 +796,7 @@ function renderProfileEdit(app) {
         btn.textContent = 'Saving...'; btn.disabled = true
         try {
             await updateName(fname + ' ' + lname)
-            await updateProfile(_profileDocId, { first_name: fname, last_name: lname, display_name: fname + ' ' + lname, bio })
+            await updateProfile(_profileDocId, { first_name: fname, last_name: lname, bio })
             _profile.first_name = fname; _profile.last_name = lname; _profile.bio = bio
             showToast('Profile updated!', 'success')
             navigate('profile')
