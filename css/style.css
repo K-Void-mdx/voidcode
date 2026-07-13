@@ -522,6 +522,7 @@ ul, ol { list-style: none; }
 }
 .lesson-item:hover { border-color: var(--primary); background: var(--bg-hover); }
 .lesson-item.completed { border-color: var(--success); }
+.lesson-item.in-progress { border-color: var(--primary); background: rgba(var(--primary-rgb, 212, 168, 66), 0.05); }
 .lesson-num {
     width: 30px; height: 30px; border-radius: 50%;
     background: var(--bg); display: flex; align-items: center; justify-content: center;

@@ -26,20 +26,39 @@ function formatDate(iso) {
     return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
+const _avatarColors = [
+    '#E17076', '#7BC862', '#E5CA77', '#65AADD', '#A695E7',
+    '#EE7AAE', '#6EC9CB', '#FAA774', '#E47272', '#78C862',
+    '#6BB5E0', '#A37DD4', '#E88D93', '#6DC8B8', '#EDB553',
+    '#D4A842', '#5CA0D2', '#C68FE6', '#E0804E', '#5DB5A4'
+]
+
+function getNameColor(name) {
+    if (!name) return _avatarColors[0]
+    let hash = 0
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash)
+    }
+    return _avatarColors[Math.abs(hash) % _avatarColors.length]
+}
+
 function getInitials(name) {
     if (!name) return '?'
-    return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
+    const parts = name.trim().split(/\s+/).filter(Boolean)
+    if (parts.length === 0) return '?'
+    if (parts.length === 1) return parts[0][0].toUpperCase()
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+}
+
+function makeAvatarHTML(name, size) {
+    const initials = getInitials(name)
+    const color = getNameColor(name)
+    const sz = size || 'sm'
+    return '<div class="avatar avatar-' + sz + ' avatar-initials" style="background:' + color + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;border-radius:50%">' + initials + '</div>'
 }
 
 function getAvatarUrl(gender, seed) {
-    const s = seed || 'user'
-    if (gender === 'male') {
-        return 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + s + '&accessoriesType=blank&topType=shortHairShortWaved&facialHairType=beardMedium&clothingType=blazer&eyeType=default&mouthType=smile&skinColor=light'
-    }
-    if (gender === 'female') {
-        return 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + s + '_f&accessoriesType=blank&topType=longHairStraight&facialHairType=blank&clothingType=blazer&eyeType=default&mouthType=smile&skinColor=light'
-    }
-    return 'https://api.dicebear.com/7.x/initials/svg?seed=' + s + '&backgroundColor=C9922A'
+    return ''
 }
 
 function getPasswordStrength(pw) {

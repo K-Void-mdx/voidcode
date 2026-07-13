@@ -472,7 +472,7 @@ window.adminSaveLesson = async function(e) {
         lesson_order: parseInt(document.getElementById('al-order')?.value) || 1,
         description: document.getElementById('al-desc')?.value.trim(),
         content: contentPayload,
-        lesson_type: 'theory',
+        lesson_type: 'article',
         estimated_minutes: parseInt(document.getElementById('al-minutes')?.value) || 15,
         xp_reward: parseInt(document.getElementById('al-xp')?.value) || 50,
         is_free: document.getElementById('al-free')?.checked ?? true,
