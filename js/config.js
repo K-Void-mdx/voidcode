@@ -7,7 +7,7 @@ const CONFIG = {
         domain: 'voidcode.tech'
     },
 
-    adminEmail: 'k-void@voidcode.tech',
+    adminEmail: 'migsun890@gmail.com',
 
     appwrite: {
         endpoint: 'https://fra.cloud.appwrite.io/v1',
