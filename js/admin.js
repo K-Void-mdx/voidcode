@@ -300,12 +300,12 @@ function _showCourseModal(course) {
             const storage = getStorage()
             const { ID, Permission, Role } = Appwrite
             const result = await storage.createFile(
-                CONFIG.storage.courseImagesBucketId,
+                CONFIG.storage.avatarsBucketId,
                 ID.unique(),
                 file,
                 [Permission.read(Role.any())]
             )
-            const fileUrl = storage.getFilePreview(CONFIG.storage.courseImagesBucketId, result.$id, 400, 250).toString()
+            const fileUrl = storage.getFilePreview(CONFIG.storage.avatarsBucketId, result.$id, 400, 250).toString()
             if (urlInput) urlInput.value = fileUrl
             if (preview) preview.innerHTML = '<img src="' + fileUrl + '" style="width:100%;height:100%;object-fit:cover">'
         } catch (err) {
