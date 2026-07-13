@@ -1,17 +1,22 @@
+function _userPerms(userId) {
+    const { Permission, Role } = Appwrite
+    return [
+        Permission.read(Role.user(userId)),
+        Permission.update(Role.user(userId)),
+        Permission.delete(Role.user(userId))
+    ]
+}
+
 async function createProfile(userId, data) {
     initDb()
     const db = getDb()
-    const { ID, Permission, Role } = Appwrite
+    const { ID } = Appwrite
     const doc = await db.createDocument(
         CONFIG.database.id,
         CONFIG.database.collections.profiles,
         ID.unique(),
         { userId, ...data },
-        [
-            Permission.read(Role.user(userId)),
-            Permission.update(Role.user(userId)),
-            Permission.delete(Role.user(userId))
-        ]
+        _userPerms(userId)
     )
     return doc
 }
@@ -44,11 +49,12 @@ async function updateProfile(docId, data) {
 async function uploadAvatar(file) {
     initDb()
     const storage = getStorage()
-    const { ID } = Appwrite
+    const { ID, Permission, Role } = Appwrite
     const result = await storage.createFile(
         CONFIG.storage.avatarsBucketId,
         ID.unique(),
-        file
+        file,
+        [Permission.read(Role.any())]
     )
     return result.$id
 }

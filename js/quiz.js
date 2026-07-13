@@ -38,6 +38,7 @@ async function submitQuizAttempt(userId, quizId, answers, score, total) {
             { userId, quizId, answers: JSON.stringify(answers), score, total, completed_at: new Date().toISOString() },
             [
                 Permission.read(Role.user(userId)),
+                Permission.update(Role.user(userId)),
                 Permission.delete(Role.user(userId))
             ]
         )

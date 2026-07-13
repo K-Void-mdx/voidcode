@@ -28,6 +28,7 @@ async function addBookmark(userId, courseId) {
             { userId, courseId, created_at: new Date().toISOString() },
             [
                 Permission.read(Role.user(userId)),
+                Permission.update(Role.user(userId)),
                 Permission.delete(Role.user(userId))
             ]
         )

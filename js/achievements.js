@@ -43,7 +43,9 @@ async function awardAchievement(userId, achievementId) {
             ID.unique(),
             { userId, achievementId, earned_at: new Date().toISOString() },
             [
-                Permission.read(Role.user(userId))
+                Permission.read(Role.user(userId)),
+                Permission.update(Role.user(userId)),
+                Permission.delete(Role.user(userId))
             ]
         )
     } catch (e) { console.warn('awardAchievement failed:', e); return null }
@@ -69,7 +71,9 @@ async function checkAndAwardCertificate(userId, courseId) {
             ID.unique(),
             { userId, courseId, course_title: course.title, completed_at: new Date().toISOString() },
             [
-                Permission.read(Role.user(userId))
+                Permission.read(Role.user(userId)),
+                Permission.update(Role.user(userId)),
+                Permission.delete(Role.user(userId))
             ]
         )
     } catch (e) { console.warn('checkAndAwardCertificate failed:', e); return null }
