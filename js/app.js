@@ -116,6 +116,7 @@ async function handleRoute() {
         case 'bookmarks': await renderBookmarks(app); break
         case 'settings': renderSettings(app); break
         case 'search': await renderSearchResults(app, p1); break
+        case 'admin': await renderAdmin(app); break
         case 'logout': handleLogout(); break
         default: renderNotFound(app)
     }
@@ -171,7 +172,8 @@ function renderSidebar(active) {
         { id: 'bookmarks', icon: '◆', label: 'Bookmarks' },
         { id: 'certificates', icon: '★', label: 'Certificates' },
         { id: 'profile', icon: '◎', label: 'Profile' },
-        { id: 'settings', icon: '⊙', label: 'Settings' }
+        { id: 'settings', icon: '⊙', label: 'Settings' },
+        ...(isAdmin() ? [{ id: 'admin', icon: '⚙', label: 'Admin Panel' }] : [])
     ]
     const links = items.map(i =>
         '<a class="sidebar-item' + (i.id === active ? ' active' : '') + '" onclick="navigate(\'' + i.id + '\')"><span class="sidebar-icon">' + i.icon + '</span>' + i.label + '</a>'

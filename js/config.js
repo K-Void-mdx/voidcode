@@ -7,6 +7,8 @@ const CONFIG = {
         domain: 'voidcode.tech'
     },
 
+    adminEmail: 'k-void@voidcode.tech',
+
     appwrite: {
         endpoint: 'https://fra.cloud.appwrite.io/v1',
         projectId: '6a4f8acd002d44e26f1c'

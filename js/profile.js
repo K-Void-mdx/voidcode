@@ -15,7 +15,7 @@ async function createProfile(userId, data) {
         CONFIG.database.id,
         CONFIG.database.collections.profiles,
         ID.unique(),
-        { userId, ...data },
+        { appwrite_user_id: userId, ...data },
         _userPerms(userId)
     )
     return doc
@@ -28,7 +28,7 @@ async function getProfile(userId) {
         const docs = await getDb().listDocuments(
             CONFIG.database.id,
             CONFIG.database.collections.profiles,
-            [Query.equal('userId', userId)]
+            [Query.equal('appwrite_user_id', userId)]
         )
         return docs.documents[0] || null
     } catch { return null }

@@ -74,6 +74,19 @@ function formatCourseDoc(doc) {
 }
 
 function formatLessonDoc(doc) {
+    let concepts = []
+    try {
+        if (Array.isArray(doc.concepts)) {
+            concepts = doc.concepts.map(c => {
+                if (typeof c === 'string') return JSON.parse(c)
+                return c
+            }).filter(c => c && c.title)
+        }
+    } catch {}
+
+    let summary = []
+    if (Array.isArray(doc.summary)) summary = doc.summary.filter(Boolean)
+
     return {
         $id: doc.$id,
         id: doc.id || doc.$id,
@@ -81,8 +94,8 @@ function formatLessonDoc(doc) {
         title: doc.title || '',
         icon: doc.icon || '',
         desc: doc.description || doc.desc || '',
-        concepts: Array.isArray(doc.concepts) ? doc.concepts : [],
-        summary: Array.isArray(doc.summary) ? doc.summary : [],
+        concepts,
+        summary,
         quiz: doc.quiz || null,
         order: parseInt(doc.order) || 0
     }
