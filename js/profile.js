@@ -62,15 +62,11 @@ async function uploadAvatar(file) {
 function getAvatarFileUrl(fileId) {
     if (!fileId) return ''
     try {
-        const storage = getStorage()
-        const url = storage.getFilePreview(CONFIG.storage.uploadsBucketId, fileId, 200, 200)
-        return url.toString()
+        const endpoint = CONFIG.appwrite.endpoint.replace(/\/v1$/, '')
+        const projectId = CONFIG.appwrite.projectId
+        const bucket = CONFIG.storage.uploadsBucketId
+        return endpoint + '/v1/storage/buckets/' + bucket + '/files/' + fileId + '/view?project=' + projectId
     } catch {
-        try {
-            const storage = getStorage()
-            return storage.getFileView(CONFIG.storage.uploadsBucketId, fileId).toString()
-        } catch {
-            return ''
-        }
+        return ''
     }
 }

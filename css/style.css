@@ -772,3 +772,28 @@ ul, ol { list-style: none; }
     .form-row-2 { grid-template-columns: 1fr; }
     .admin-modal { padding: 1.25rem; }
 }
+
+/* AI Chat Sidebar */
+.ai-chat-item {
+    padding: 0.6rem 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    margin-bottom: 0.25rem;
+    transition: background 0.15s;
+}
+.ai-chat-item:hover { background: var(--bg-hover); }
+.ai-chat-item.active { background: var(--primary); color: #fff; }
+.ai-chat-item-title { font-size: 0.82rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 1.5rem; }
+.ai-chat-item-time { font-size: 0.7rem; color: var(--text-dim); margin-top: 0.15rem; }
+.ai-chat-item.active .ai-chat-item-time { color: rgba(255,255,255,0.7); }
+.ai-chat-item-del {
+    position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: var(--text-dim); cursor: pointer;
+    font-size: 0.75rem; padding: 0.2rem; opacity: 0; transition: opacity 0.15s;
+}
+.ai-chat-item:hover .ai-chat-item-del { opacity: 1; }
+.ai-chat-item.active .ai-chat-item-del { color: rgba(255,255,255,0.8); }
+@media (max-width: 768px) {
+    .ai-sidebar { display: none !important; }
+}

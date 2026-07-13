@@ -223,13 +223,17 @@ function _showCourseModal(course) {
     <form onsubmit="adminSaveCourse(event)" style="display:flex;flex-direction:column;gap:0.75rem">
       <input type="hidden" id="ac-docid" value="${isEdit ? course.$id : ''}">
       <input type="hidden" id="ac-image-url" value="${escapeHtml(course?.image_url || '')}">
-      <div class="form-group" style="text-align:center">
+      <div class="form-group">
         <label class="form-label">Course Image</label>
-        <div id="ac-image-preview" onclick="document.getElementById('ac-image-input').click()" style="width:120px;height:80px;border-radius:8px;margin:0 auto;cursor:pointer;overflow:hidden;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;background:var(--surface-2)">
-          ${course?.image_url ? '<img src="' + course.image_url + '" style="width:100%;height:100%;object-fit:cover">' : '<span style="font-size:2rem;color:var(--text-dim)">+</span>'}
+        <div id="ac-image-preview" style="width:100%;max-width:300px;height:120px;border-radius:8px;margin:0 auto 0.5rem;overflow:hidden;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;background:var(--surface-2)">
+          ${course?.image_url ? '<img src="' + course.image_url + '" style="width:100%;height:100%;object-fit:cover">' : '<span style="font-size:2rem;color:var(--text-dim)">No image</span>'}
+        </div>
+        <div style="display:flex;gap:0.5rem;justify-content:center;margin-bottom:0.5rem">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('ac-image-input').click()">Upload File</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="adminPasteImageUrl()">Paste URL</button>
         </div>
         <input type="file" id="ac-image-input" accept="image/*" style="display:none" onchange="adminPreviewCourseImage(event)">
-        <p style="font-size:0.75rem;color:var(--text-dim);margin-top:0.3rem">Click to upload (optional)</p>
+        <p style="font-size:0.75rem;color:var(--text-dim);text-align:center" id="ac-image-hint">${course?.image_url ? 'Image set ✓' : 'Optional — adds a cover image to the course card'}</p>
       </div>
       <div class="form-group">
         <label class="form-label">Slug *</label>
@@ -290,11 +294,29 @@ function _showCourseModal(course) {
     </form>`
     modal.style.display = 'flex'
 
+    window.adminPasteImageUrl = function() {
+        const url = prompt('Paste image URL:', document.getElementById('ac-image-url')?.value || '')
+        if (url === null) return
+        const urlInput = document.getElementById('ac-image-url')
+        const preview = document.getElementById('ac-image-preview')
+        const hint = document.getElementById('ac-image-hint')
+        if (url.trim()) {
+            if (urlInput) urlInput.value = url.trim()
+            if (preview) preview.innerHTML = '<img src="' + url.trim() + '" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.innerHTML=\'<span style=font-size:1rem;color:#ef4444>Invalid URL</span>\'">'
+            if (hint) hint.textContent = 'URL set ✓'
+        } else {
+            if (urlInput) urlInput.value = ''
+            if (preview) preview.innerHTML = '<span style="font-size:2rem;color:var(--text-dim)">No image</span>'
+            if (hint) hint.textContent = 'Optional — adds a cover image to the course card'
+        }
+    }
+
     window.adminPreviewCourseImage = async function(e) {
         const file = e.target.files[0]
         if (!file) return
         const preview = document.getElementById('ac-image-preview')
         const urlInput = document.getElementById('ac-image-url')
+        const hint = document.getElementById('ac-image-hint')
         if (preview) preview.innerHTML = '<div style="color:var(--text-dim);font-size:0.8rem">Uploading...</div>'
         try {
             const storage = getStorage()
@@ -305,13 +327,15 @@ function _showCourseModal(course) {
                 file,
                 [Permission.read(Role.any())]
             )
-            const fileUrl = storage.getFilePreview(CONFIG.storage.uploadsBucketId, result.$id, 400, 250).toString()
+            const endpoint = CONFIG.appwrite.endpoint.replace(/\/v1$/, '')
+            const fileUrl = endpoint + '/v1/storage/buckets/' + CONFIG.storage.uploadsBucketId + '/files/' + result.$id + '/view?project=' + CONFIG.appwrite.projectId
             if (urlInput) urlInput.value = fileUrl
             if (preview) preview.innerHTML = '<img src="' + fileUrl + '" style="width:100%;height:100%;object-fit:cover">'
+            if (hint) hint.textContent = 'Uploaded ✓'
         } catch (err) {
             console.error('Image upload failed:', err)
-            showToast('Image upload failed: ' + err.message + '. Make sure course-images bucket exists.', 'error')
-            if (preview) preview.innerHTML = '<span style="font-size:2rem;color:var(--text-dim)">+</span>'
+            showToast('Image upload failed: ' + err.message, 'error')
+            if (preview) preview.innerHTML = '<span style="font-size:2rem;color:var(--text-dim)">No image</span>'
         }
     }
 }
