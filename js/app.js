@@ -121,8 +121,6 @@ async function handleRoute() {
         case 'verify-email': renderVerifyEmail(app); break
         case 'complete-profile': renderCompleteProfile(app); break
         case 'dashboard': await renderDashboard(app); break
-        case 'paths': await renderPaths(app); break
-        case 'path': await renderPathDetail(app, p1); break
         case 'courses': await renderCourses(app); break
         case 'language': await renderLanguage(app, p1); break
         case 'course': await renderCourseDetail(app, p1); break
@@ -507,24 +505,6 @@ async function renderDashboard(app) {
 
     const popularHTML = (await Promise.all(popular.map(c => courseCardMini(c, progressMap[c.id])))).join('')
 
-    let pathRecHTML = ''
-    const rec = await getRecommendedPath(_user.$id)
-    if (rec) {
-        const nextStep = rec.progress.stepStatuses?.find(s => !s.completed && s.exists)
-        pathRecHTML = `
-            <div class="dash-welcome" style="margin-top:2rem;border-left:4px solid ${rec.path.color}">
-                <div class="dash-welcome-text">
-                    <h2 style="margin:0;font-size:1.2rem">${rec.path.icon} ${escapeHtml(rec.path.title)}</h2>
-                    <p style="margin:0.3rem 0 0;color:var(--text-secondary)">${escapeHtml(rec.path.desc)}</p>
-                    ${rec.progress.percent > 0 ? '<div class="xp-bar" style="margin-top:0.5rem;max-width:250px"><div class="xp-bar-fill" style="width:' + rec.progress.percent + '%"></div></div>' : ''}
-                    ${nextStep ? '<p style="margin:0.5rem 0 0;font-size:0.85rem"><strong>Next:</strong> ' + escapeHtml(nextStep.title) + '</p>' : ''}
-                </div>
-                <div>
-                    <button class="btn btn-primary btn-sm" onclick="navigate('path','${rec.path.id}')">${rec.progress.percent > 0 ? 'Continue' : 'Start'} Path</button>
-                </div>
-            </div>`
-    }
-
     renderFrame(app, `
         <div class="dash-welcome">
             <div class="dash-welcome-text">
@@ -563,114 +543,6 @@ async function renderDashboard(app) {
         <div class="section-header" style="margin-top:2rem"><h2>Popular Courses</h2><a onclick="navigate(\'courses\')">Browse all</a></div>
         <div class="course-grid">${popularHTML}</div>
     `, 'dashboard')
-}
-
-async function renderPaths(app) {
-    const paths = getAllPaths()
-    const userId = _user?.$id
-
-    let recHTML = ''
-    if (userId) {
-        const rec = await getRecommendedPath(userId)
-        if (rec) {
-            const nextStep = rec.progress.stepStatuses?.find(s => !s.completed)
-            recHTML = `
-                <div class="dash-welcome" style="margin-bottom:1.5rem;border-left:4px solid ${rec.path.color}">
-                    <div class="dash-welcome-text">
-                        <h2 style="margin:0;font-size:1.2rem">${rec.path.icon} Recommended: ${escapeHtml(rec.path.title)}</h2>
-                        <p style="margin:0.3rem 0 0;color:var(--text-secondary)">${escapeHtml(rec.path.desc)}</p>
-                        ${nextStep ? '<p style="margin:0.5rem 0 0;font-size:0.85rem"><strong>Next up:</strong> ' + escapeHtml(nextStep.title) + '</p>' : '<p style="margin:0.5rem 0 0;font-size:0.85rem;color:#22c55e">Path complete! Great work.</p>'}
-                    </div>
-                    <div>
-                        <button class="btn btn-primary btn-sm" onclick="navigate('path','${rec.path.id}')">${rec.progress.percent > 0 ? 'Continue' : 'Start'} Path</button>
-                    </div>
-                </div>`
-        }
-    }
-
-    const pathCards = await Promise.all(paths.map(async p => {
-        const progress = userId ? await getPathProgress(p.id, userId) : { completed: 0, total: p.steps.length, percent: 0 }
-        return `
-            <div class="course-card" onclick="navigate('path','${p.id}')" style="cursor:pointer">
-                <div class="course-card-thumb" style="background:${p.color}22;border-bottom:3px solid ${p.color}">
-                    <div class="course-initials" style="color:${p.color};font-size:2rem">${p.icon}</div>
-                </div>
-                <div class="course-card-body">
-                    <h3>${escapeHtml(p.title)}</h3>
-                    <p class="desc">${escapeHtml(p.desc)}</p>
-                    <div class="course-card-meta">
-                        <span>${escapeHtml(p.difficulty)}</span>
-                        <span>${p.steps.length} courses</span>
-                    </div>
-                    ${progress.percent > 0 ? '<div class="course-card-bar"><div class="course-card-fill" style="width:' + progress.percent + '%"></div></div><p style="font-size:0.75rem;color:var(--text-dim);margin-top:0.25rem">' + progress.percent + '% complete</p>' : ''}
-                </div>
-            </div>`
-    }))
-
-    renderFrame(app, `
-        <div class="section-header"><h2>Learning Paths</h2></div>
-        <p style="color:var(--text-secondary);margin-bottom:1.5rem">Structured courses to take you from beginner to professional. Follow a path to build real skills step by step.</p>
-        ${recHTML}
-        <div class="course-grid">${pathCards.join('')}</div>
-    `, 'paths')
-}
-
-async function renderPathDetail(app, pathId) {
-    const path = getPath(pathId)
-    if (!path) { navigate('paths'); return }
-
-    const userId = _user?.$id
-    const progress = userId ? await getPathProgress(pathId, userId) : { completed: 0, total: path.steps.length, percent: 0, stepStatuses: [] }
-    const courses = await fetchCourses()
-
-    const stepsHTML = progress.stepStatuses.map((step, i) => {
-        let statusIcon = (i + 1).toString()
-        let statusClass = ''
-        if (step.completed) { statusIcon = '✓'; statusClass = ' completed' }
-        else if (step.in_progress) { statusIcon = '→'; statusClass = ' in-progress' }
-
-        const courseExists = step.exists
-        const course = courses.find(c => c.id === step.course_slug)
-
-        return `
-            <div class="lesson-item${statusClass}" ${courseExists ? 'onclick="navigate(\'course\',\'' + step.course_slug + '\')"' : ''} style="${!courseExists ? 'opacity:0.5;cursor:default' : ''}">
-                <div class="lesson-num">${statusIcon}</div>
-                <div class="lesson-info">
-                    <h4>${escapeHtml(step.title)}</h4>
-                    <p>${escapeHtml(step.desc)}</p>
-                    ${!courseExists ? '<span style="font-size:0.75rem;color:var(--text-dim)">Coming soon</span>' : ''}
-                </div>
-                <div style="text-align:right;min-width:60px">
-                    ${step.completed ? '<span style="color:#22c55e;font-size:0.8rem">Done</span>' :
-                      step.in_progress ? '<span style="color:#f59e0b;font-size:0.8rem">' + step.percent + '%</span>' :
-                      '<span style="color:var(--text-dim);font-size:0.8rem">Not started</span>'}
-                </div>
-            </div>`
-    }).join('')
-
-    const nextStep = progress.stepStatuses.find(s => !s.completed && s.exists)
-
-    renderFrame(app, `
-        <a class="back-link" onclick="navigate('paths')">&#8592; Learning Paths</a>
-        <div class="course-detail-header" style="border-left:4px solid ${path.color}">
-            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:0.5rem">
-                <span style="font-size:2.5rem">${path.icon}</span>
-                <div>
-                    <h1 style="margin:0">${escapeHtml(path.title)}</h1>
-                    <p style="color:var(--text-secondary);margin:0.2rem 0">${escapeHtml(path.desc)}</p>
-                </div>
-            </div>
-            <div class="course-detail-meta">
-                <span class="badge">${escapeHtml(path.difficulty)}</span>
-                <span class="badge">${path.steps.length} courses</span>
-                <span class="badge">${progress.completed}/${progress.total} completed</span>
-            </div>
-            ${progress.percent > 0 ? '<div class="xp-bar" style="margin-top:1rem;max-width:400px"><div class="xp-bar-fill" style="width:' + progress.percent + '%"></div></div><p style="font-size:0.8rem;color:var(--text-dim);margin-top:0.25rem">' + progress.percent + '% complete</p>' : ''}
-            ${nextStep ? '<button class="btn btn-primary" style="margin-top:1rem" onclick="navigate(\'course\',\'' + nextStep.course_slug + '\')">Continue: ' + escapeHtml(nextStep.title) + '</button>' :
-              progress.percent >= 100 ? '<div style="margin-top:1rem;padding:0.75rem 1rem;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px;color:#22c55e;font-weight:600">Path Complete! Great work.</div>' : ''}
-        </div>
-        <div class="lesson-list">${stepsHTML}</div>
-    `, 'paths')
 }
 
 async function renderCourses(app) {
@@ -797,33 +669,11 @@ async function renderCourseDetail(app, courseId) {
 
     const pct = lessons.length ? Math.round((completedIds.size / lessons.length) * 100) : 0
 
-    let pathContextHTML = ''
-    if (_user) {
-        const pathContexts = await getPathForCourseContext(courseId, _user.$id)
-        if (pathContexts && pathContexts.length) {
-            const pc = pathContexts[0]
-            const stepNum = pc.stepIndex + 1
-            const totalSteps = pc.path.steps.length
-            pathContextHTML = `
-                <div style="margin-top:1rem;padding:0.75rem 1rem;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
-                    <div>
-                        <span style="font-size:0.8rem;color:var(--text-dim)">Part ${stepNum} of ${totalSteps} in</span>
-                        <strong style="font-size:0.9rem;cursor:pointer;color:var(--accent)" onclick="navigate('path','${pc.path.id}')">${pc.path.icon} ${escapeHtml(pc.path.title)}</strong>
-                    </div>
-                    <div style="display:flex;gap:0.5rem;align-items:center">
-                        ${pc.isNextAvailable && pc.nextStep ? '<button class="btn btn-secondary btn-sm" onclick="navigate(\'course\',\'' + pc.nextStep.course_slug + '\')">Next: ' + escapeHtml(pc.nextStep.title) + ' →</button>' : ''}
-                        <button class="btn btn-ghost btn-sm" onclick="navigate('path','${pc.path.id}')">View Path</button>
-                    </div>
-                </div>`
-        }
-    }
-
     renderFrame(app, '<a class="back-link" onclick="navigate(\'courses\')">&#8592; Courses</a>' +
         '<div class="course-detail-header">' +
         '<h1>' + escapeHtml(course.title) + '</h1>' +
         '<p style="color:var(--text-secondary);margin:0.4rem 0">' + escapeHtml(course.desc) + '</p>' +
         '<div class="course-detail-meta"><span class="badge">' + escapeHtml(course.difficulty) + '</span><span class="badge">' + escapeHtml(course.duration) + '</span><span class="badge">' + lessons.length + ' lessons</span></div>' +
-        pathContextHTML +
         (pct > 0 ? '<div class="xp-bar" style="margin-top:1rem;max-width:300px"><div class="xp-bar-fill" style="width:' + pct + '%"></div></div><p style="font-size:0.8rem;color:var(--text-dim);margin-top:0.25rem">' + pct + '% complete</p>' : '') +
         '</div>' +
         '<div class="lesson-list">' + (lessonItems || '<p style="color:var(--text-secondary)">No lessons yet.</p>') + '</div>', 'courses')
