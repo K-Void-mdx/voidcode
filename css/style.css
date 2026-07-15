@@ -862,6 +862,40 @@ ul, ol { list-style: none; }
 }
 
 /* ============================================================
+   LANGUAGE DETAIL PAGE
+   ============================================================ */
+.lang-header {
+    display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;
+}
+.lang-header-icon { font-size: 3rem; }
+.lang-levels-container {
+    display: flex; gap: 1rem; overflow-x: auto; scroll-snap-type: x mandatory;
+    padding-bottom: 1rem; -webkit-overflow-scrolling: touch;
+}
+.lang-level-box {
+    flex: 0 0 calc(33.333% - 0.67rem); min-width: 260px; scroll-snap-align: start;
+    background: var(--bg-card); border: 2px solid var(--border); border-radius: var(--radius-lg);
+    padding: 1.5rem; cursor: pointer; transition: all 0.2s;
+    display: flex; flex-direction: column; gap: 0.6rem;
+}
+.lang-level-box:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--shadow); }
+.lang-level-box.active { border-color: var(--primary); background: var(--primary-subtle); }
+.lang-level-icon { font-size: 1.5rem; }
+.lang-level-name { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+.lang-level-desc { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; flex: 1; }
+.lang-level-meta { font-size: 0.75rem; color: var(--text-dim); }
+.lang-level-arrow {
+    font-size: 1.2rem; color: var(--primary); font-weight: 700;
+    align-self: flex-end; margin-top: 0.5rem;
+}
+@media (max-width: 768px) {
+    .lang-levels-container { flex-direction: column; }
+    .lang-level-box { flex: none; min-width: 0; }
+    .lang-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    .lang-header-icon { font-size: 2rem; }
+}
+
+/* ============================================================
    PLACEHOLDER / EMPTY STATES
    ============================================================ */
 .placeholder-page {

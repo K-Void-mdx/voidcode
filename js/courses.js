@@ -419,3 +419,15 @@ const COURSES = [
         ['linux-b-12', 'Mini Project: System Monitor', 'Shell script dashboard']
     ])
 ]
+
+function groupCoursesByLanguage(courses) {
+    const groups = {}
+    for (const c of courses) {
+        const key = c.title
+        if (!groups[key]) {
+            groups[key] = { title: key, icon: c.icon, color: c.color, category: c.category, courses: [] }
+        }
+        groups[key].courses.push(c)
+    }
+    return Object.values(groups)
+}

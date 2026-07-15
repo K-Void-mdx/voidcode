@@ -124,6 +124,7 @@ async function handleRoute() {
         case 'paths': await renderPaths(app); break
         case 'path': await renderPathDetail(app, p1); break
         case 'courses': await renderCourses(app); break
+        case 'language': await renderLanguage(app, p1); break
         case 'course': await renderCourseDetail(app, p1); break
         case 'lesson': await renderLessonView(app, p1, p2); break
         case 'profile': await renderProfile(app); break
@@ -674,14 +675,70 @@ async function renderPathDetail(app, pathId) {
 
 async function renderCourses(app) {
     const courses = await fetchCourses()
-    const progressMap = await getCourseProgressAll(_user?.$id)
-    const filters = ['All', 'Beginner', 'Intermediate', 'Advanced']
-    const cards = (await Promise.all(courses.map(c => courseCardMini(c, progressMap[c.id])))).join('')
+    const groups = groupCoursesByLanguage(courses)
+
+    const cards = groups.map(g => {
+        const levels = g.courses.map(c => c.difficulty).join(' · ')
+        const totalLessons = g.courses.reduce((sum, c) => sum + (c.lessons?.length || 0), 0)
+        const slug = g.courses[0]?.id?.replace(/-(beginner|intermediate|advanced)$/, '') || g.courses[0]?.id
+        return '<div class="course-card" onclick="navigate(\'language\',\'' + slug + '\')">' +
+            '<div class="course-card-thumb" style="background:' + g.color + '22;border-bottom:3px solid ' + g.color + '">' +
+            '<div class="course-initials" style="color:' + g.color + ';font-size:2rem">' + g.icon + '</div>' +
+            '</div>' +
+            '<div class="course-card-body">' +
+            '<h3>' + escapeHtml(g.title) + '</h3>' +
+            '<p class="desc">' + escapeHtml(g.courses[0]?.desc || '') + '</p>' +
+            '<div class="course-card-meta">' +
+            '<span>' + levels + '</span>' +
+            '<span>' + totalLessons + ' lessons total</span>' +
+            '</div>' +
+            '</div></div>'
+    }).join('')
 
     renderFrame(app, `
         <div class="section-header"><h2>All Courses</h2></div>
-        <p style="color:var(--text-secondary);margin-bottom:1.5rem">${courses.length} courses available</p>
+        <p style="color:var(--text-secondary);margin-bottom:1.5rem">${groups.length} languages available</p>
         <div class="course-grid">${cards}</div>
+    `, 'courses')
+}
+
+async function renderLanguage(app, slug) {
+    const courses = await fetchCourses()
+    const group = groupCoursesByLanguage(courses).find(g =>
+        g.courses.some(c => c.id === slug || c.id.startsWith(slug + '-'))
+    )
+    if (!group) { renderNotFound(app); return }
+
+    const levels = ['Beginner', 'Intermediate', 'Advanced']
+    const icons = { Beginner: '🟢', Intermediate: '🟡', Advanced: '🔴' }
+    const activeIdx = levels.indexOf(group.courses[0]?.difficulty || 'Beginner')
+
+    const boxesHTML = levels.map((level, i) => {
+        const course = group.courses.find(c => c.difficulty === level)
+        if (!course) return ''
+        const lessonCount = course.lessons?.length || 0
+        const taskLabel = level === 'Beginner' ? 'Coding Challenges' : level === 'Advanced' ? 'Production Tasks' : 'Project Steps'
+        return '<div class="lang-level-box' + (i === activeIdx ? ' active' : '') + '" data-idx="' + i + '" onclick="navigate(\'course\',\'' + course.id + '\')">' +
+            '<div class="lang-level-icon">' + icons[level] + '</div>' +
+            '<div class="lang-level-name">' + level + '</div>' +
+            '<div class="lang-level-desc">' + escapeHtml(course.desc || '') + '</div>' +
+            '<div class="lang-level-meta">' + lessonCount + ' ' + taskLabel + ' · ' + escapeHtml(course.duration || '') + '</div>' +
+            '<div class="lang-level-arrow">→</div>' +
+            '</div>'
+    }).join('')
+
+    renderFrame(app, `
+        <a class="back-link" onclick="navigate('courses')">← All Courses</a>
+        <div class="lang-header">
+            <span class="lang-header-icon" style="color:${group.color}">${group.icon}</span>
+            <div>
+                <h1 style="margin:0">${escapeHtml(group.title)}</h1>
+                <p style="color:var(--text-secondary);margin:0.3rem 0 0;font-size:0.9rem">${escapeHtml(group.courses[0]?.desc || '')}</p>
+            </div>
+        </div>
+        <div class="lang-levels-container" id="lang-levels">
+            ${boxesHTML}
+        </div>
     `, 'courses')
 }
 
