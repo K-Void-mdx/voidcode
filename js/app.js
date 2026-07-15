@@ -219,7 +219,7 @@ async function renderLanding(app) {
         const imgHTML = thumb
             ? '<img src="' + thumb + '" alt="' + escapeHtml(g.title) + '" style="width:100%;height:100%;object-fit:cover">'
             : '<span class="lang-item-icon">' + (g.icon || g.title[0]) + '</span>'
-        return '<div class="lp-lang-card" onclick="navigate(\'language\',\'' + slug + '\')">' +
+        return '<div class="lp-lang-card" onclick="navigate(\'login\')">' +
             '<div class="lp-lang-img">' + imgHTML + '</div>' +
             '<div class="lp-lang-text">' +
             '<span class="lp-lang-name">' + escapeHtml(g.title) + '</span>' +
