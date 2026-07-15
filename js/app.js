@@ -681,9 +681,13 @@ async function renderCourses(app) {
         const levels = g.courses.map(c => c.difficulty).join(' · ')
         const totalLessons = g.courses.reduce((sum, c) => sum + (c.lessons?.length || 0), 0)
         const slug = g.courses[0]?.id?.replace(/-(beginner|intermediate|advanced)$/, '') || g.courses[0]?.id
+        const thumb = THUMBNAILS[g.title]
+        const thumbContent = thumb
+            ? '<img src="' + thumb + '" style="width:100%;height:100%;object-fit:cover" alt="' + escapeHtml(g.title) + '">'
+            : '<div class="course-initials" style="color:' + g.color + ';font-size:2rem">' + g.icon + '</div>'
         return '<div class="course-card" onclick="navigate(\'language\',\'' + slug + '\')">' +
             '<div class="course-card-thumb" style="background:' + g.color + '22;border-bottom:3px solid ' + g.color + '">' +
-            '<div class="course-initials" style="color:' + g.color + ';font-size:2rem">' + g.icon + '</div>' +
+            thumbContent +
             '</div>' +
             '<div class="course-card-body">' +
             '<h3>' + escapeHtml(g.title) + '</h3>' +
@@ -727,10 +731,15 @@ async function renderLanguage(app, slug) {
             '</div>'
     }).join('')
 
+    const thumb = THUMBNAILS[group.title]
+    const headerIcon = thumb
+        ? '<img src="' + thumb + '" style="width:80px;height:80px;border-radius:var(--radius-lg);object-fit:cover" alt="' + escapeHtml(group.title) + '">'
+        : '<span class="lang-header-icon" style="color:' + group.color + '">' + group.icon + '</span>'
+
     renderFrame(app, `
         <a class="back-link" onclick="navigate('courses')">← All Courses</a>
         <div class="lang-header">
-            <span class="lang-header-icon" style="color:${group.color}">${group.icon}</span>
+            ${headerIcon}
             <div>
                 <h1 style="margin:0">${escapeHtml(group.title)}</h1>
                 <p style="color:var(--text-secondary);margin:0.3rem 0 0;font-size:0.9rem">${escapeHtml(group.courses[0]?.desc || '')}</p>

@@ -431,3 +431,22 @@ function groupCoursesByLanguage(courses) {
     }
     return Object.values(groups)
 }
+
+const THUMBNAILS = {
+    'Python': 'https://i.postimg.cc/GB1kH38t/Chat-GPT-Image-Jul-15-2026-11-31-06-AM-(1).png',
+    'JavaScript': 'https://i.postimg.cc/JDxcwwhR/Jul-15-2026-11-52-23-AM.png',
+    'Java': 'https://i.postimg.cc/D88QNM32/Chat-GPT-Image-Jul-15-2026-11-55-49-AM.png',
+    'C': 'https://i.postimg.cc/ZCCPQMz0/Chat-GPT-Image-Jul-15-2026-11-57-45-AM.png',
+    'C++': 'https://i.postimg.cc/gnny7TbJ/Chat-GPT-Image-Jul-15-2026-11-59-52-AM.png',
+    'HTML & CSS Essentials': 'https://i.postimg.cc/mtt3n5Wk/Chat-GPT-Image-Jul-15-2026-12-01-33-PM.png',
+    'Go': 'https://i.postimg.cc/dLpRcjJG/Chat-GPT-Image-Jul-15-2026-12-10-04-PM.png',
+    'Rust': 'https://i.postimg.cc/6ygVxfBL/Chat-GPT-Image-Jul-15-2026-12-06-48-PM.png',
+    'PHP': 'https://i.postimg.cc/dLpRcjJG/Chat-GPT-Image-Jul-15-2026-12-10-04-PM.png',
+    'Ruby': 'https://i.postimg.cc/HVR019Tv/Chat-GPT-Image-Jul-15-2026-12-12-30-PM.png',
+    'Swift': 'https://i.postimg.cc/3kGX80wj/Chat-GPT-Image-Jul-15-2026-12-14-37-PM.png',
+    'Kotlin': 'https://i.postimg.cc/9D9dmwfb/Chat-GPT-Image-Jul-15-2026-12-17-55-PM.png',
+    'SQL': 'https://i.postimg.cc/yDRm13Nb/Chat-GPT-Image-Jul-15-2026-12-20-43-PM.png',
+    'Data Science': 'https://i.postimg.cc/Sn96SYsm/Chat-GPT-Image-Jul-15-2026-12-23-18-PM.png',
+    'Git & GitHub': 'https://i.postimg.cc/FYSyrkRr/Chat-GPT-Image-Jul-15-2026-12-25-49-PM.png',
+    'Linux & CLI': 'https://i.postimg.cc/WDPMhpFs/Chat-GPT-Image-Jul-15-2026-12-28-19-PM.png'
+}
