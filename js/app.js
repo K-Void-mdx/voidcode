@@ -130,8 +130,8 @@ async function handleRoute() {
 
 window.addEventListener('hashchange', () => handleRoute())
 
-function renderFrame(app, content, sidebar) {
-    app.innerHTML = '<div class="app-layout">' + renderTopbar() + renderSidebar(sidebar) + '<main class="main-content">' + content + '</main></div>'
+function renderFrame(app, content, sidebar, noScroll) {
+    app.innerHTML = '<div class="app-layout">' + renderTopbar() + renderSidebar(sidebar) + '<main class="main-content' + (noScroll ? ' no-scroll' : '') + '">' + content + '</main></div>'
     initTheme()
 }
 
@@ -879,7 +879,7 @@ function renderAiTutor(app) {
                 </div>
             </div>
         </div>
-    `, 'ai-tutor')
+    `, 'ai-tutor', true)
 
     const scrollMsgs = () => { const el = $('ai-messages'); if (el) el.scrollTop = el.scrollHeight }
     scrollMsgs()
