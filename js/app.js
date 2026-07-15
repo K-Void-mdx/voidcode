@@ -91,6 +91,10 @@ async function handleRoute() {
 
     closeSidebar()
 
+    const fab = $('fab-ai')
+    const hideFabPages = ['home', 'landing', 'login', 'signup', 'forgot', 'forgot-confirm', 'verify-email', 'complete-profile', 'logout']
+    if (fab) fab.style.display = hideFabPages.includes(page) ? 'none' : 'flex'
+
     if (_user && !_profile && page !== 'complete-profile' && page !== 'logout' && page !== 'home' && page !== 'verify-email') {
         if (page === 'complete-profile') { renderCompleteProfile(app); return }
         navigate('complete-profile'); return
@@ -975,8 +979,8 @@ async function renderProfile(app) {
             ${avatarHTML}
             <div class="profile-header-info">
                 <h1>${escapeHtml(name)}</h1>
-                ${_profile?.username ? '<p class="username">@${escapeHtml(_profile.username)}</p>' : ''}
-                ${_profile?.bio ? '<p class="bio">${escapeHtml(_profile.bio)}</p>' : ''}
+                ${_profile?.username ? `<p class="username">@${escapeHtml(_profile.username)}</p>` : ''}
+                ${_profile?.bio ? `<p class="bio">${escapeHtml(_profile.bio)}</p>` : ''}
                 <div class="profile-meta">
                     <span>Level ${level.level} — ${level.title}</span>
                     <span>${xp} XP</span>

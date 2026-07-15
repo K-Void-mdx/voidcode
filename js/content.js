@@ -21,6 +21,10 @@ async function fetchCourses(force) {
             _lessonsCache[key].push(l)
         }
         for (const c of _coursesCache) c.lessons = _lessonsCache[c.id] || []
+
+        const localCourses = (COURSES || []).filter(lc => !_coursesCache.some(ac => ac.id === lc.id))
+        _coursesCache = _coursesCache.concat(localCourses)
+
         return _coursesCache
     } catch (e) {
         console.warn('Failed to fetch from Appwrite, using local data:', e)
