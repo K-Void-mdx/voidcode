@@ -256,7 +256,9 @@ function _showCourseModal(course) {
         </div>
         <div class="form-group">
           <label class="form-label">Category *</label>
-          <input class="form-input" id="ac-category" required placeholder="General Purpose" value="${escapeHtml(course?.category || '')}">
+          <select class="form-input" id="ac-category" required>
+            ${['General Purpose','Web Development','Systems','Data','Tools','Mobile'].map(c => `<option value="${c}" ${(course?.category === c) ? 'selected' : ''}>${c}</option>`).join('')}
+          </select>
         </div>
       </div>
       <div class="form-row-2">

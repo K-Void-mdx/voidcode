@@ -16,6 +16,9 @@ window.toggleTheme = function() {
     localStorage.setItem('kvoid_theme', next)
     const btn = $('theme-toggle')
     if (btn) btn.textContent = next === 'dark' ? '◑' : '◐'
+    if (_user && typeof updateSettings === 'function') {
+        updateSettings(_user.$id, { theme: next }).catch(() => {})
+    }
 }
 
 const _searchDebounce = debounce(function(val) {
@@ -64,6 +67,14 @@ async function init() {
             if (p) { _profile = p; _profileDocId = p.$id }
             await migrateLocalProgress()
             await migrateLocalBookmarks()
+            fetchSettings(_user.$id).then(s => {
+                if (s && s.theme) {
+                    localStorage.setItem('kvoid_theme', s.theme)
+                    document.documentElement.setAttribute('data-theme', s.theme)
+                    const btn = $('theme-toggle')
+                    if (btn) btn.textContent = s.theme === 'dark' ? '◑' : '◐'
+                }
+            }).catch(() => {})
         }
 
         await handleRoute()
@@ -860,20 +871,28 @@ function renderAiTutor(app) {
     }).join('')
 
     renderFrame(app, `
-        <div class="ai-tutor" style="display:flex;height:calc(100vh - 60px);overflow:hidden">
-            <div class="ai-sidebar" style="width:260px;min-width:260px;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--surface)">
-                <div style="padding:1rem;border-bottom:1px solid var(--border)">
+        <div class="ai-tutor">
+            <div class="ai-history-panel" id="ai-history-panel">
+                <div style="padding:1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+                    <strong style="font-size:0.9rem">History</strong>
+                    <button class="btn btn-ghost btn-sm btn-icon" onclick="aiToggleHistory()">✕</button>
+                </div>
+                <div style="padding:0.75rem;border-bottom:1px solid var(--border)">
                     <button class="btn btn-primary btn-sm btn-block" onclick="aiNewChat()">+ New Chat</button>
                 </div>
                 <div class="ai-chat-list" style="flex:1;overflow-y:auto;padding:0.5rem">
                     ${chatListHTML}
                 </div>
             </div>
-            <div class="ai-main" style="flex:1;display:flex;flex-direction:column;min-width:0">
-                <div class="ai-messages" id="ai-messages" style="flex:1;overflow-y:auto;padding:1rem">
+            <div class="ai-main">
+                <div class="ai-main-topbar">
+                    <button class="btn btn-ghost btn-sm btn-icon" onclick="aiToggleHistory()" title="Chat History">☰</button>
+                    <span style="font-weight:600;font-size:0.9rem">${escapeHtml(activeChat.title)}</span>
+                </div>
+                <div class="ai-messages" id="ai-messages">
                     ${historyHTML || '<div class="ai-msg ai-msg-assistant"><div class="ai-msg-content">Hello! I\'m VOID Assistant. Ask me anything about programming.</div></div>'}
                 </div>
-                <div class="ai-input-area" style="padding:1rem;border-top:1px solid var(--border)">
+                <div class="ai-input-area">
                     <textarea class="ai-input" id="ai-input" placeholder="Ask a programming question..." rows="2" onkeydown="handleAiKey(event)"></textarea>
                     <button class="btn btn-primary" onclick="sendAiMessage()">Send</button>
                 </div>
@@ -883,6 +902,11 @@ function renderAiTutor(app) {
 
     const scrollMsgs = () => { const el = $('ai-messages'); if (el) el.scrollTop = el.scrollHeight }
     scrollMsgs()
+
+    window.aiToggleHistory = function() {
+        const panel = $('ai-history-panel')
+        if (panel) panel.classList.toggle('open')
+    }
 
     window.handleAiKey = function(e) {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAiMessage() }
@@ -896,6 +920,8 @@ function renderAiTutor(app) {
 
     window.aiSwitchChat = function(chatId) {
         setCurrentChatId(chatId)
+        const panel = $('ai-history-panel')
+        if (panel) panel.classList.remove('open')
         renderAiTutor(app)
     }
 
@@ -947,17 +973,10 @@ function renderAiTutor(app) {
         }
         msgs.scrollTop = msgs.scrollHeight
 
-        const chatList = document.querySelector('.ai-chat-list')
-        if (chatList) {
-            const chats = loadChatHistory()
-            const activeId = getCurrentChatId()
-            chatList.innerHTML = chats.map(c => `
-                <div class="ai-chat-item ${c.id === activeId ? 'active' : ''}" onclick="aiSwitchChat('${c.id}')">
-                    <div class="ai-chat-item-title">${escapeHtml(c.title)}</div>
-                    <div class="ai-chat-item-time">${formatChatTimestamp(c.updated_at)}</div>
-                    <button class="ai-chat-item-del" onclick="event.stopPropagation();aiDeleteChat('${c.id}')" title="Delete">✕</button>
-                </div>
-            `).join('')
+        const titleEl = document.querySelector('.ai-main-topbar span')
+        if (titleEl) {
+            const chat = getCurrentChat()
+            if (chat) titleEl.textContent = chat.title
         }
     }
 }
