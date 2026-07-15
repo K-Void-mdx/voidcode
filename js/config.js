@@ -72,13 +72,9 @@ Be concise, accurate, and encouraging. Use code examples when helpful.`
             difficulty: 'Beginner → Advanced',
             color: '#3776AB',
             steps: [
-                { course_slug: 'python-basics', title: 'Python Fundamentals', desc: 'Variables, data types, operators, and your first programs.' },
-                { course_slug: 'python-control-flow', title: 'Control Flow', desc: 'If/else, loops, and decision-making in code.' },
-                { course_slug: 'python-functions', title: 'Functions & Modules', desc: 'Write reusable code and organize with modules.' },
-                { course_slug: 'python-data-structures', title: 'Data Structures', desc: 'Lists, dictionaries, sets, and tuples.' },
-                { course_slug: 'python-oop', title: 'Object-Oriented Python', desc: 'Classes, objects, inheritance, and encapsulation.' },
-                { course_slug: 'python-file-handling', title: 'File Handling & Errors', desc: 'Read/write files and handle exceptions gracefully.' },
-                { course_slug: 'python-projects', title: 'Mini Projects', desc: 'Apply everything: calculator, to-do app, simple games.' }
+                { course_slug: 'python-beginner', title: 'Python Fundamentals', desc: 'Variables, data types, operators, and your first programs.' },
+                { course_slug: 'python-intermediate', title: 'Intermediate Python', desc: 'Data structures, OOP, file handling, and error management.' },
+                { course_slug: 'python-advanced', title: 'Advanced Python', desc: 'Concurrency, testing, design patterns, and real projects.' }
             ]
         },
         {
@@ -89,12 +85,10 @@ Be concise, accurate, and encouraging. Use code examples when helpful.`
             difficulty: 'Beginner → Intermediate',
             color: '#E44D26',
             steps: [
-                { course_slug: 'html-basics', title: 'HTML Fundamentals', desc: 'Structure web pages with semantic HTML.' },
-                { course_slug: 'css-basics', title: 'CSS Styling', desc: 'Make beautiful layouts with Flexbox and Grid.' },
-                { course_slug: 'javascript-basics', title: 'JavaScript Essentials', desc: 'Add interactivity to your websites.' },
-                { course_slug: 'javascript-dom', title: 'DOM Manipulation', desc: 'Dynamically update pages with JavaScript.' },
-                { course_slug: 'javascript-fetch', title: 'APIs & Fetch', desc: 'Connect to real data from the web.' },
-                { course_slug: 'web-projects', title: 'Build Projects', desc: 'Portfolio site, weather app, and more.' }
+                { course_slug: 'html-css-beginner', title: 'HTML & CSS Essentials', desc: 'Build the structure and style of websites.' },
+                { course_slug: 'javascript-beginner', title: 'JavaScript Essentials', desc: 'Add interactivity to your websites.' },
+                { course_slug: 'javascript-intermediate', title: 'Intermediate JavaScript', desc: 'Async programming, closures, and modern patterns.' },
+                { course_slug: 'javascript-advanced', title: 'Advanced JavaScript', desc: 'Design patterns, optimization, and production apps.' }
             ]
         },
         {
@@ -105,11 +99,8 @@ Be concise, accurate, and encouraging. Use code examples when helpful.`
             difficulty: 'Intermediate → Advanced',
             color: '#F7DF1E',
             steps: [
-                { course_slug: 'javascript-advanced', title: 'Advanced JavaScript', desc: 'Closures, prototypes, and the event loop.' },
-                { course_slug: 'javascript-async', title: 'Async Programming', desc: 'Promises, async/await, and error handling.' },
-                { course_slug: 'javascript-es6', title: 'ES6+ Features', desc: 'Arrow functions, destructuring, modules, and more.' },
-                { course_slug: 'javascript-patterns', title: 'Design Patterns', desc: 'Common patterns every JS developer should know.' },
-                { course_slug: 'nodejs-basics', title: 'Node.js Introduction', desc: 'Run JavaScript on the server.' }
+                { course_slug: 'javascript-intermediate', title: 'Intermediate JavaScript', desc: 'Async, fetch, closures, and ES6+ patterns.' },
+                { course_slug: 'javascript-advanced', title: 'Advanced JavaScript', desc: 'Design patterns, optimization, and Web APIs.' }
             ]
         },
         {
@@ -120,12 +111,9 @@ Be concise, accurate, and encouraging. Use code examples when helpful.`
             difficulty: 'Beginner → Advanced',
             color: '#ED8B00',
             steps: [
-                { course_slug: 'java-basics', title: 'Java Fundamentals', desc: 'Syntax, variables, data types, and first programs.' },
-                { course_slug: 'java-control-flow', title: 'Control Flow', desc: 'Conditionals, loops, and switch statements.' },
-                { course_slug: 'java-oop', title: 'Object-Oriented Java', desc: 'Classes, inheritance, polymorphism, interfaces.' },
-                { course_slug: 'java-collections', title: 'Collections Framework', desc: 'Lists, maps, sets, and iterators.' },
-                { course_slug: 'java-exceptions', title: 'Exception Handling', desc: 'Try/catch, custom exceptions, and best practices.' },
-                { course_slug: 'java-projects', title: 'Java Projects', desc: 'Student manager, simple games, file processor.' }
+                { course_slug: 'java-beginner', title: 'Java Fundamentals', desc: 'Syntax, variables, data types, and first programs.' },
+                { course_slug: 'java-intermediate', title: 'Intermediate Java', desc: 'OOP, collections, exception handling, and file I/O.' },
+                { course_slug: 'java-advanced', title: 'Advanced Java', desc: 'Concurrency, design patterns, JDBC, and robust apps.' }
             ]
         },
         {
@@ -136,12 +124,12 @@ Be concise, accurate, and encouraging. Use code examples when helpful.`
             difficulty: 'Beginner → Advanced',
             color: '#00599C',
             steps: [
-                { course_slug: 'c-basics', title: 'C Programming Basics', desc: 'Variables, loops, functions, and arrays.' },
-                { course_slug: 'c-pointers', title: 'Pointers & Memory', desc: 'Master pointers, dynamic allocation, and memory management.' },
-                { course_slug: 'c-structures', title: 'Structures & Files', desc: 'Custom data types and file I/O.' },
-                { course_slug: 'cpp-basics', title: 'C++ Introduction', desc: 'Classes, objects, and the C++ standard library.' },
-                { course_slug: 'cpp-oop', title: 'C++ OOP', desc: 'Inheritance, polymorphism, templates.' },
-                { course_slug: 'cpp-projects', title: 'C++ Projects', desc: 'Banking system, student records, mini games.' }
+                { course_slug: 'c-beginner', title: 'C Programming Basics', desc: 'Variables, loops, functions, and arrays.' },
+                { course_slug: 'c-intermediate', title: 'Intermediate C', desc: 'Pointers, dynamic memory, structs, and file I/O.' },
+                { course_slug: 'c-advanced', title: 'Advanced C', desc: 'Data structures, system calls, networking, and low-level programming.' },
+                { course_slug: 'cpp-beginner', title: 'C++ Introduction', desc: 'C with classes, STL, and modern C++.' },
+                { course_slug: 'cpp-intermediate', title: 'Intermediate C++', desc: 'OOP, templates, STL algorithms, and smart pointers.' },
+                { course_slug: 'cpp-advanced', title: 'Advanced C++', desc: 'Memory management, multithreading, optimization.' }
             ]
         },
         {
@@ -152,11 +140,9 @@ Be concise, accurate, and encouraging. Use code examples when helpful.`
             difficulty: 'Intermediate → Advanced',
             color: '#FF6F00',
             steps: [
-                { course_slug: 'python-basics', title: 'Python Fundamentals', desc: 'Get comfortable with Python first.' },
-                { course_slug: 'python-data-structures', title: 'Data Structures', desc: 'Work with lists, dicts, and sets.' },
-                { course_slug: 'data-analysis', title: 'Data Analysis with Python', desc: 'NumPy, Pandas, and data cleaning.' },
-                { course_slug: 'data-visualization', title: 'Data Visualization', desc: 'Matplotlib, Seaborn, and charts.' },
-                { course_slug: 'ml-intro', title: 'Intro to Machine Learning', desc: 'Scikit-learn, basic algorithms, and evaluation.' }
+                { course_slug: 'python-beginner', title: 'Python Fundamentals', desc: 'Get comfortable with Python first.' },
+                { course_slug: 'sql-beginner', title: 'SQL & Databases', desc: 'Query, insert, and manage data.' },
+                { course_slug: 'data-science', title: 'Data Science with Python', desc: 'NumPy, Pandas, visualization, and ML basics.' }
             ]
         },
         {
@@ -167,11 +153,8 @@ Be concise, accurate, and encouraging. Use code examples when helpful.`
             difficulty: 'Intermediate → Advanced',
             color: '#CE422B',
             steps: [
-                { course_slug: 'rust-basics', title: 'Rust Fundamentals', desc: 'Ownership, borrowing, and lifetimes.' },
-                { course_slug: 'rust-structs', title: 'Structs & Enums', desc: 'Custom types and pattern matching.' },
-                { course_slug: 'rust-errors', title: 'Error Handling', desc: 'Result, Option, and panic.' },
-                { course_slug: 'rust-collections', title: 'Collections & Iterators', desc: 'Vecs, hashmaps, and iterator adapters.' },
-                { course_slug: 'rust-projects', title: 'Rust Projects', desc: 'CLI tools, web servers, and more.' }
+                { course_slug: 'rust-beginner', title: 'Rust Fundamentals', desc: 'Ownership, borrowing, lifetimes, and safety.' },
+                { course_slug: 'rust-intermediate', title: 'Intermediate Rust', desc: 'Lifetimes, traits, generics, async, and unsafe.' }
             ]
         }
     ],

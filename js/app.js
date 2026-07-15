@@ -680,7 +680,7 @@ async function renderCourses(app) {
     const cards = (await Promise.all(courses.map(c => courseCardMini(c, progressMap[c.id])))).join('')
 
     const tracks = [
-        { icon: '🌐', title: 'Build Websites', desc: 'HTML → CSS → JavaScript', color: '#E44D26', courses: ['html-beginner', 'css-beginner', 'javascript-beginner'] },
+        { icon: '🌐', title: 'Build Websites', desc: 'HTML & CSS → JavaScript', color: '#E44D26', courses: ['html-css-beginner', 'javascript-beginner'] },
         { icon: '🤖', title: 'Build AI & Smart Systems', desc: 'Python → SQL → Data Science', color: '#3776AB', courses: ['python-beginner', 'sql-beginner', 'data-science'] },
         { icon: '📱', title: 'Build Phone Apps', desc: 'Kotlin (Android) or Swift (iOS)', color: '#7F52FF', courses: ['kotlin-beginner', 'swift-beginner'] },
         { icon: '⚙️', title: 'Build Systems & Engines', desc: 'C → C++ → Rust', color: '#00599C', courses: ['c-beginner', 'cpp-beginner', 'rust-beginner'] }
@@ -714,6 +714,9 @@ async function courseCardMini(course, progress) {
     const thumbContent = course.image_url
         ? '<img src="' + course.image_url + '" style="width:100%;height:100%;object-fit:cover">'
         : '<div class="course-initials" style="color:' + course.color + '">' + initials + '</div>'
+    const lessonCount = course.lessons?.length || 0
+    const taskLabel = course.difficulty === 'Beginner' ? 'Coding Challenges' :
+                      course.difficulty === 'Advanced' ? 'Production Tasks' : 'Project Steps'
     return '<div class="course-card" onclick="navigate(\'course\',\'' + course.id + '\')">' +
         '<div class="course-card-thumb" style="background:' + (course.image_url ? 'var(--surface-2)' : course.color + '22') + ';border-bottom:3px solid ' + course.color + '">' +
         thumbContent +
@@ -725,7 +728,7 @@ async function courseCardMini(course, progress) {
         '<div class="course-card-meta">' +
         '<span>' + escapeHtml(course.difficulty) + '</span>' +
         '<span>' + escapeHtml(course.duration) + '</span>' +
-        '<span>' + (course.lessons?.length || 0) + ' lessons</span>' +
+        '<span>' + lessonCount + ' ' + taskLabel + '</span>' +
         '</div>' +
         (pct > 0 ? '<div class="course-card-bar"><div class="course-card-fill" style="width:' + pct + '%"></div></div><p style="font-size:0.75rem;color:var(--text-dim);margin-top:0.25rem">' + pct + '% complete</p>' : '') +
         '</div></div>'
@@ -793,11 +796,49 @@ async function renderLessonView(app, courseId, lessonId) {
     const nextLesson = lessonIndex < lessons.length - 1 ? lessons[lessonIndex + 1] : null
     const isDone = _user ? await isLessonComplete(_user.$id, courseId, lessonId) : false
     const interactive = getLessonContent(lessonId)
+    const difficulty = course?.difficulty || 'Beginner'
 
     if (interactive) {
         const progress = lessons.length ? Math.round(((lessonIndex + 1) / lessons.length) * 100) : 0
-        const starterLines = interactive.starterCode.split('\n')
-        const lineNumbers = starterLines.map((_, i) => i + 1).join('\n')
+
+        let difficultySidebar = ''
+        if (difficulty === 'Intermediate') {
+            difficultySidebar = `
+                <div style="border-bottom:1px solid var(--border);padding:0.5rem 0.75rem;background:var(--bg)">
+                    <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--text-dim);margin-bottom:0.4rem">📁 Project Files</div>
+                    <div style="font-size:0.78rem;color:var(--text-secondary)">
+                        <div style="padding:0.2rem 0.4rem;border-radius:3px;background:var(--primary-subtle);color:var(--primary);margin-bottom:0.15rem">📄 main.py</div>
+                        <div style="padding:0.2rem 0.4rem;color:var(--text-dim)">📄 helpers.py</div>
+                        <div style="padding:0.2rem 0.4rem;color:var(--text-dim)">📄 test_main.py</div>
+                    </div>
+                </div>
+                <div style="border-bottom:1px solid var(--border);padding:0.5rem 0.75rem;background:var(--bg)">
+                    <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--text-dim);margin-bottom:0.4rem">🎯 Milestones</div>
+                    <div style="font-size:0.78rem;color:var(--text-secondary)">
+                        <div style="display:flex;align-items:center;gap:0.4rem;padding:0.15rem 0"><span style="color:var(--success)">✓</span> Setup environment</div>
+                        <div style="display:flex;align-items:center;gap:0.4rem;padding:0.15rem 0"><span style="color:var(--primary)">○</span> Write core logic</div>
+                        <div style="display:flex;align-items:center;gap:0.4rem;padding:0.15rem 0"><span style="color:var(--text-dim)">○</span> Test & debug</div>
+                    </div>
+                </div>`
+        } else if (difficulty === 'Advanced') {
+            difficultySidebar = `
+                <div style="border-bottom:1px solid var(--border);padding:0.5rem 0.75rem;background:var(--bg)">
+                    <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--text-dim);margin-bottom:0.4rem">⚡ Performance</div>
+                    <div style="font-size:0.78rem;color:var(--text-secondary)">
+                        <div style="display:flex;justify-content:space-between;padding:0.15rem 0"><span>Time:</span><span style="color:var(--success)">O(n)</span></div>
+                        <div style="display:flex;justify-content:space-between;padding:0.15rem 0"><span>Memory:</span><span style="color:var(--primary)">24 MB</span></div>
+                    </div>
+                </div>
+                <div style="border-bottom:1px solid var(--border);padding:0.5rem 0.75rem;background:var(--bg)">
+                    <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--text-dim);margin-bottom:0.4rem">🖥️ Terminal</div>
+                    <div style="font-size:0.75rem;font-family:monospace;color:#00ff00;background:#0a0a0a;padding:0.4rem;border-radius:4px">$ python main.py</div>
+                </div>`
+        }
+
+        const friendlyErrorParser = difficulty === 'Beginner' ? `
+            <div style="font-size:0.75rem;color:var(--text-dim);padding:0.3rem 0.75rem;border-top:1px solid var(--border);background:var(--bg)">
+                💡 Errors shown in plain English — no scary stack traces
+            </div>` : ''
 
         renderFrame(app, `
         <div class="lesson-interactive">
@@ -821,8 +862,10 @@ async function renderLessonView(app, courseId, lessonId) {
             </div>
             <div class="lesson-panel panel-sandbox" style="border-right:1px solid var(--border)">
                 <div class="lesson-panel-header">
-                    <span>💻</span> Your Workspace
+                    <span>💻</span> ${difficulty === 'Advanced' ? 'Terminal' : 'Your Workspace'}
+                    <span class="badge" style="margin-left:auto;font-size:0.65rem;padding:0.15rem 0.5rem">${difficulty}</span>
                 </div>
+                ${difficultySidebar}
                 <div class="sandbox-editor">
                     <textarea class="sandbox-textarea" id="sandbox-code" spellcheck="false">${escapeHtml(interactive.starterCode)}</textarea>
                     <div class="sandbox-actions">
@@ -838,6 +881,7 @@ async function renderLessonView(app, courseId, lessonId) {
                 </div>
                 <div class="console-output console-idle" id="sandbox-output">Click "Run Code" to test your solution...</div>
                 <div class="feedback-area" id="sandbox-feedback"></div>
+                ${friendlyErrorParser}
                 <div class="console-actions">
                     ${!isDone ? '<button class="btn btn-primary btn-sm" onclick="sandboxComplete(\'' + courseId + '\',\'' + lessonId + '\')" id="complete-btn" disabled>✓ Mark Complete</button>' : '<span style="color:var(--success);font-size:0.85rem;font-weight:600">✓ Completed</span>'}
                     <span style="flex:1"></span>
@@ -934,9 +978,16 @@ window.sandboxRun = function(lessonId) {
         outputLines = result ? result.split('\n') : []
         output.textContent = outputLines.length ? outputLines.join('\n') : '(no output)'
     } catch (e) {
-        output.textContent = 'Error: ' + e.message
+        const msg = e.message || String(e)
+        let friendlyMsg = ''
+        if (msg.includes('SyntaxError')) friendlyMsg = '🔧 Syntax error — check your spelling, quotation marks, and parentheses.'
+        else if (msg.includes('ReferenceError')) friendlyMsg = '🔍 Name error — did you spell a variable or function name correctly?'
+        else if (msg.includes('TypeError')) friendlyMsg = '⚠️ Type error — you might be mixing incompatible data types.'
+        else if (msg.includes('IndentationError')) friendlyMsg = '📏 Indentation error — check that your spacing is consistent.'
+        else friendlyMsg = '🛠️ Hold up! Something went wrong. Check your code for typos and try again.'
+        output.textContent = friendlyMsg
         output.className = 'console-output'
-        feedback.innerHTML = '<div class="feedback-msg error">❌ Runtime error: ' + escapeHtml(e.message) + '</div>'
+        feedback.innerHTML = '<div class="feedback-msg error">' + friendlyMsg + '</div>'
         return
     }
 

@@ -20,20 +20,18 @@ const COURSES = [
         ['py-b-12', 'Mini Project: Calculator', 'Build a working calculator from scratch']
     ]),
     _c('python-intermediate', '🐍', 'Python', 'Intermediate', 'Go beyond basics. Data structures, OOP, file handling, and error management.', 'Intermediate', '10 hours', 'General Purpose', '#3776AB', [
-        ['py-i-1', 'Dictionaries', 'Key-value pairs and real-world data'],
-        ['py-i-2', 'Tuples & Sets', 'Immutable data and unique collections'],
-        ['py-i-3', 'List Comprehensions', 'Elegant one-liner data transforms'],
-        ['py-i-4', 'Functions: Args & Kwargs', 'Flexible function parameters'],
-        ['py-i-5', 'Lambda Functions', 'Anonymous functions in one line'],
-        ['py-i-6', 'Exception Handling', 'Try/except/finally for robust code'],
-        ['py-i-7', 'File Handling', 'Read and write files programmatically'],
-        ['py-i-8', 'Modules & Packages', 'Organizing and importing code'],
-        ['py-i-9', 'Object-Oriented Programming', 'Classes, objects, and methods'],
-        ['py-i-10', 'Inheritance & Polymorphism', 'Building class hierarchies'],
-        ['py-i-11', 'Decorators', 'Modifying function behavior'],
-        ['py-i-12', 'Working with JSON', 'Parsing and creating JSON data'],
-        ['py-i-13', 'Regular Expressions', 'Pattern matching in text'],
-        ['py-i-14', 'Mini Project: To-Do App', 'CRUD app with file storage']
+        ['py-i-1', 'Lists on Steroids (Comprehensions)', 'Condense 5 lines of loop code into one elegant line'],
+        ['py-i-2', 'Multi-Key Filing Cabinets (Dicts)', 'Store structured data with real-world key-value pairs'],
+        ['py-i-3', 'Defensive Programming (Error Handling)', 'try/except blocks so your app never crashes'],
+        ['py-i-4', 'Interacting with Files (File I/O)', 'Read, write, and update .txt and .csv files'],
+        ['py-i-5', 'The Object Blueprint (OOP Basics)', 'Create classes to generate repeating app objects'],
+        ['py-i-6', 'Object Inheritance & Family Trees', 'Pass properties from parent classes to child classes'],
+        ['py-i-7', 'Supercharging Functions (Args & Kwargs)', 'Build flexible functions that accept infinite settings'],
+        ['py-i-8', 'Importing External Brains (Modules)', 'Use math, random, datetime for complex heavy lifting'],
+        ['py-i-9', 'Custom Code Wrappers (Decorators)', 'Add behaviors around functions without rewriting them'],
+        ['py-i-10', 'Memory-Friendly Loops (Generators)', 'Handle millions of rows without overloading RAM'],
+        ['py-i-11', 'Reading Live Internet Data (JSON & APIs)', 'Fetch live data from web servers and parse it'],
+        ['py-i-12', 'Mini Project: Expense Tracker', 'Read entries, save to file, categorize costs']
     ]),
     _c('python-advanced', '🐍', 'Python', 'Advanced', 'Advanced patterns, concurrency, testing, and real-world project architecture.', 'Advanced', '12 hours', 'General Purpose', '#3776AB', [
         ['py-a-1', 'Generators & Iterators', 'Memory-efficient data streaming'],
@@ -225,34 +223,20 @@ const COURSES = [
         ['cpp-a-12', 'Mini Project: Web Server', 'HTTP server from scratch']
     ]),
 
-    _c('html-beginner', '🌐', 'HTML', 'Beginner', 'The skeleton and wardrobe of the web. HTML builds the walls of your website, and CSS paints them beautiful colors.', 'Beginner', '4 hours', 'Web Development', '#E44D26', [
+    _c('html-css-beginner', '🌐', 'HTML & CSS Essentials', 'Beginner', 'The skeleton and wardrobe of the web. HTML builds the walls, CSS paints them beautiful colors. One course, two superpowers.', 'Beginner', '8 hours', 'Web Development', '#E44D26', [
         ['html-b-1', 'The Web\'s Building Blocks', 'What HTML is and why every website uses it'],
         ['html-b-2', 'Blueprint of a Page', 'The head, body, and skeleton of every HTML file'],
         ['html-b-3', 'Headlines & Paragraphs', 'Organizing content that people actually read'],
         ['html-b-4', 'Clicking Through the Web (Links)', 'How one page connects to another — the web\'s glue'],
         ['html-b-5', 'Adding Photos & Videos', 'Embed images, audio, and video into your pages'],
-        ['html-b-6', 'Making Lists', 'Ordered steps, unordered bullet points — organize anything'],
-        ['html-b-7', 'Data Tables', 'Present information in neat rows and columns'],
-        ['html-b-8', 'Forms That Collect Info', 'Build the inputs that power sign-ups and search bars'],
-        ['html-b-9', 'Buttons That Work', 'Submit forms, trigger actions, validate user input'],
-        ['html-b-10', 'Semantic HTML: Talking Like a Pro', 'header, nav, main — tags that describe meaning, not looks'],
-        ['html-b-11', 'Divs & Spans: Invisible Containers', 'Group and wrap content for styling control'],
-        ['html-b-12', 'Mini Project: Portfolio Page', 'Build your personal developer showcase']
-    ]),
-
-    _c('css-beginner', '🎨', 'CSS', 'Beginner', 'The artist of the web. CSS takes your boring HTML and turns it into something people actually want to look at.', 'Beginner', '6 hours', 'Web Development', '#264DE4', [
-        ['css-b-1', 'Painting the Web', 'What CSS is and how it transforms plain HTML'],
+        ['html-b-6', 'Making Lists & Tables', 'Organize data in bullet points, numbers, and grids'],
+        ['html-b-7', 'Forms That Collect Info', 'Build the inputs that power sign-ups and search bars'],
+        ['css-b-1', 'Painting the Web (CSS Intro)', 'What CSS is and how it transforms plain HTML'],
         ['css-b-2', 'Picking Your Targets (Selectors)', 'Tell CSS exactly which elements to style'],
-        ['css-b-3', 'Colors & Backgrounds', 'Named colors, hex codes, and beautiful gradients'],
-        ['css-b-4', 'Making Text Beautiful (Typography)', 'Fonts, sizes, spacing — the art of readable text'],
-        ['css-b-5', 'The Box Behind Everything', 'Every element is a box — learn margin, padding, border'],
-        ['css-b-6', 'Block vs Inline: Layout DNA', 'How elements stack and flow on the page'],
-        ['css-b-7', 'Positioning: Where Things Go', 'Static, relative, absolute, fixed — pin anything anywhere'],
-        ['css-b-8', 'Flexbox: One Row Wizard', 'Align items perfectly in a single dimension'],
-        ['css-b-9', 'Grid: The Layout Superpower', 'Build complex 2D layouts with ease'],
-        ['css-b-10', 'Making It Responsive', 'Sites that look great on phones AND desktops'],
-        ['css-b-11', 'Animations & Transitions', 'Make buttons glow, images fade, and pages come alive'],
-        ['css-b-12', 'Mini Project: Landing Page', 'A beautiful responsive landing page']
+        ['css-b-3', 'Colors, Fonts & The Box Model', 'Make text beautiful — every element is a box'],
+        ['css-b-4', 'Flexbox & Grid: Layout Superpowers', 'Align anything in one dimension or two'],
+        ['css-b-5', 'Responsive: Phones to Desktops', 'Sites that look great on every screen size'],
+        ['css-b-6', 'Mini Project: Portfolio Page', 'Build your personal developer showcase']
     ]),
 
     _c('go-beginner', '🐹', 'Go', 'Beginner', 'Simple, fast, and built for the modern web. Google\'s language for servers and CLI tools.', 'Beginner', '8 hours', 'General Purpose', '#00ADD8', [

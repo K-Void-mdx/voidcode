@@ -1,14 +1,17 @@
 const LESSON_CONTENT = {
     'py-b-1': {
-        metaphor: 'Think of <code>print()</code> as your computer\'s megaphone. Whatever you put inside the parentheses gets shouted onto the screen.',
-        story: `<p>Every journey starts with a single line. In programming, that line is <code>"Hello, World!"</code> — the universal first words every coder writes.</p>
-<p>When you type <code>print("Hello, World!")</code>, you're telling Python: <em>"Hey, take this text and show it on screen."</em></p>
-<p>The <code>print()</code> function is Python's way of displaying messages. It's how your computer talks back to you.</p>`,
-        mission: 'Type a print statement that displays: Hello, World!',
-        starterCode: '# Type your code below\nprint("Hello, World!")',
-        validation: { type: 'contains', patterns: ['print(', 'Hello'] },
-        successMsg: '🎉 Your computer just spoke its first words! You\'re officially a programmer now.',
-        hint: 'Use print() with the text "Hello, World!" inside the parentheses.'
+        metaphor: '<code>print()</code> is a digital megaphone. It pushes words out of the computer\'s brain and onto your display glass.',
+        story: `<p>Welcome to K-VOID! Every legendary developer started exactly where you are right now — by making a computer display a message on command.</p>
+<p>In Python, we use a tool called <code>print()</code>. Think of it like a <strong>digital megaphone</strong>. Whatever text you put inside the parentheses and wrapped in quotation marks, the computer will shout right back at you on screen.</p>
+<div class="inline-code">print("Hello from K-VOID")</div>
+<p>This line makes <code>Hello from K-VOID</code> appear instantly on your screen.</p>`,
+        mission: `<p>Complete both tasks:</p>
+<ol><li>Use the <code>print()</code> tool on line 2</li>
+<li>Make the computer say exactly: <code>"Welcome back, King"</code></li></ol>`,
+        starterCode: '# Line 1: Use print() below to make the screen respond!\nprint("Welcome back, King")',
+        validation: { type: 'contains', patterns: ['print(', 'Welcome back, King'] },
+        successMsg: '🎉 Outstanding job! You just forced your computer to execute its very first instruction. Your journey to mastery has officially begun.',
+        hint: 'Wrap your text in quotation marks and place it inside print() parentheses. Check your spelling and capitalization.'
     },
     'py-b-2': {
         metaphor: 'Variables are labeled cardboard boxes. You put something inside, stick a name tag on the front, and find it later by that name.',
