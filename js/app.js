@@ -212,9 +212,20 @@ function closeSidebar() {
 
 async function renderLanding(app) {
     const courses = await fetchCourses()
-    const allLangs = courses.map(c =>
-        '<div class="lang-item"><span class="lang-item-icon">' + (c.icon || c.title[0]) + '</span><span class="lang-item-name">' + escapeHtml(c.title) + '</span></div>'
-    ).join('')
+    const allLangGroups = groupCoursesByLanguage(courses)
+    const allLangs = allLangGroups.map(g => {
+        const slug = g.courses[0]?.id?.replace(/-(beginner|intermediate|advanced)$/, '') || g.courses[0]?.id
+        const thumb = THUMBNAILS[g.title]
+        const imgHTML = thumb
+            ? '<img src="' + thumb + '" alt="' + escapeHtml(g.title) + '" style="width:100%;height:100%;object-fit:cover">'
+            : '<span class="lang-item-icon">' + (g.icon || g.title[0]) + '</span>'
+        return '<div class="lp-lang-card" onclick="navigate(\'language\',\'' + slug + '\')">' +
+            '<div class="lp-lang-img">' + imgHTML + '</div>' +
+            '<div class="lp-lang-text">' +
+            '<span class="lp-lang-name">' + escapeHtml(g.title) + '</span>' +
+            '<span class="lp-lang-levels">' + g.courses.length + ' levels</span>' +
+            '</div></div>'
+    }).join('')
 
     const allFeatures = [
         { title: 'Bite-Sized Lessons', desc: 'Each concept takes 2–5 minutes. Learn one thing at a time — perfect for focused sessions.' },
