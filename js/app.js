@@ -678,7 +678,33 @@ async function renderCourses(app) {
     const progressMap = await getCourseProgressAll(_user?.$id)
     const filters = ['All', 'Beginner', 'Intermediate', 'Advanced']
     const cards = (await Promise.all(courses.map(c => courseCardMini(c, progressMap[c.id])))).join('')
-    renderFrame(app, '<div class="section-header"><h2>All Courses</h2></div><p style="color:var(--text-secondary);margin-bottom:1.5rem">' + courses.length + ' courses available</p><div class="course-grid">' + cards + '</div>', 'courses')
+
+    const tracks = [
+        { icon: '🌐', title: 'Build Websites', desc: 'HTML → CSS → JavaScript', color: '#E44D26', courses: ['html-beginner', 'css-beginner', 'javascript-beginner'] },
+        { icon: '🤖', title: 'Build AI & Smart Systems', desc: 'Python → SQL → Data Science', color: '#3776AB', courses: ['python-beginner', 'sql-beginner', 'data-science'] },
+        { icon: '📱', title: 'Build Phone Apps', desc: 'Kotlin (Android) or Swift (iOS)', color: '#7F52FF', courses: ['kotlin-beginner', 'swift-beginner'] },
+        { icon: '⚙️', title: 'Build Systems & Engines', desc: 'C → C++ → Rust', color: '#00599C', courses: ['c-beginner', 'cpp-beginner', 'rust-beginner'] }
+    ]
+    const tracksHTML = tracks.map(t => `
+        <div class="career-track" onclick="navigate('courses')" style="background:${t.color}11;border:1px solid ${t.color}33;border-radius:var(--radius);padding:1rem 1.25rem;cursor:pointer;transition:all 0.2s" onmouseenter="this.style.borderColor='${t.color}';this.style.boxShadow='0 0 12px ${t.color}22'" onmouseleave="this.style.borderColor='${t.color}33';this.style.boxShadow='none'">
+            <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.4rem">
+                <span style="font-size:1.5rem">${t.icon}</span>
+                <div>
+                    <div style="font-weight:700;font-size:0.95rem;color:var(--text)">${t.title}</div>
+                    <div style="font-size:0.8rem;color:var(--text-secondary)">${t.desc}</div>
+                </div>
+            </div>
+        </div>
+    `).join('')
+
+    renderFrame(app, `
+        <div class="section-header"><h2>What do you want to build?</h2></div>
+        <p style="color:var(--text-secondary);margin-bottom:1rem;font-size:0.9rem">Choose a career goal, or browse all courses below.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75rem;margin-bottom:2rem">${tracksHTML}</div>
+        <div class="section-header"><h2>All Courses</h2></div>
+        <p style="color:var(--text-secondary);margin-bottom:1.5rem">${courses.length} courses available</p>
+        <div class="course-grid">${cards}</div>
+    `, 'courses')
 }
 
 async function courseCardMini(course, progress) {
@@ -766,43 +792,221 @@ async function renderLessonView(app, courseId, lessonId) {
     const prevLesson = lessonIndex > 0 ? lessons[lessonIndex - 1] : null
     const nextLesson = lessonIndex < lessons.length - 1 ? lessons[lessonIndex + 1] : null
     const isDone = _user ? await isLessonComplete(_user.$id, courseId, lessonId) : false
+    const interactive = getLessonContent(lessonId)
 
-    const concepts = (lesson.concepts || []).map((c, i) =>
-        '<div class="concept-block">' +
-        '<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.6rem">' +
-        '<span class="concept-num">' + (i + 1) + '</span>' +
-        '<span class="concept-title">' + escapeHtml(c.title) + '</span>' +
-        '</div>' +
-        '<p class="concept-text">' + escapeHtml(c.text) + '</p>' +
-        (c.code ? '<div class="code-block"><div class="code-header"><span>Code Example</span><button onclick="copyCode(this)">Copy</button></div><pre>' + escapeHtml(c.code) + '</pre></div>' : '') +
-        (c.classwork ? '<div class="classwork-box"><p class="classwork-label">Your Turn</p><p>' + escapeHtml(c.classwork) + '</p></div>' : '') +
-        '</div>'
-    ).join('')
+    if (interactive) {
+        const progress = lessons.length ? Math.round(((lessonIndex + 1) / lessons.length) * 100) : 0
+        const starterLines = interactive.starterCode.split('\n')
+        const lineNumbers = starterLines.map((_, i) => i + 1).join('\n')
 
-    const summaryHTML = (lesson.summary || []).map(s => '<li>' + escapeHtml(s) + '</li>').join('')
+        renderFrame(app, `
+        <div class="lesson-interactive">
+            <div class="lesson-panel panel-story">
+                <div class="lesson-panel-header">
+                    <span>📖</span> ${escapeHtml(lesson.title)}
+                    <span style="margin-left:auto;font-size:0.7rem;font-weight:400;text-transform:none;letter-spacing:0">${progress}%</span>
+                </div>
+                <div class="lesson-panel-body">
+                    <div class="story-title">${escapeHtml(lesson.title)}</div>
+                    <div class="story-metaphor">
+                        <div class="metaphor-label">💡 Metaphor</div>
+                        ${interactive.metaphor}
+                    </div>
+                    <div class="story-text">${interactive.story}</div>
+                    <div class="story-mission">
+                        <div class="mission-label">🎯 Your Mission</div>
+                        ${interactive.mission}
+                    </div>
+                </div>
+            </div>
+            <div class="lesson-panel panel-sandbox" style="border-right:1px solid var(--border)">
+                <div class="lesson-panel-header">
+                    <span>💻</span> Your Workspace
+                </div>
+                <div class="sandbox-editor">
+                    <textarea class="sandbox-textarea" id="sandbox-code" spellcheck="false">${escapeHtml(interactive.starterCode)}</textarea>
+                    <div class="sandbox-actions">
+                        <button class="btn btn-primary" onclick="sandboxRun('${lessonId}')">⚡ Run Code</button>
+                        <button class="btn btn-ghost btn-sm" onclick="sandboxReset('${lessonId}')">↺ Reset</button>
+                        <button class="btn btn-ghost btn-sm" onclick="sandboxHint('${lessonId}')" id="hint-btn">💡 Hint</button>
+                    </div>
+                </div>
+            </div>
+            <div class="lesson-panel panel-console">
+                <div class="lesson-panel-header">
+                    <span>🖥️</span> Output Console
+                </div>
+                <div class="console-output console-idle" id="sandbox-output">Click "Run Code" to test your solution...</div>
+                <div class="feedback-area" id="sandbox-feedback"></div>
+                <div class="console-actions">
+                    ${!isDone ? '<button class="btn btn-primary btn-sm" onclick="sandboxComplete(\'' + courseId + '\',\'' + lessonId + '\')" id="complete-btn" disabled>✓ Mark Complete</button>' : '<span style="color:var(--success);font-size:0.85rem;font-weight:600">✓ Completed</span>'}
+                    <span style="flex:1"></span>
+                    ${prevLesson ? '<button class="btn btn-ghost btn-sm" onclick="navigate(\'lesson\',\'' + courseId + '/' + prevLesson.id + '\')">← Prev</button>' : ''}
+                    ${nextLesson ? '<button class="btn btn-ghost btn-sm" onclick="navigate(\'lesson\',\'' + courseId + '/' + nextLesson.id + '\')">Next →</button>' : ''}
+                </div>
+            </div>
+        </div>`, '', true)
 
-    const quiz = lesson.quiz
-    const quizHTML = quiz
-        ? '<div class="quiz-section"><h3>Quick Check</h3><p class="quiz-question">' + escapeHtml(quiz.q) + '</p><div class="quiz-options">' +
-          quiz.options.map((o, i) => '<button class="quiz-option" onclick="selectQuizOption(this,' + i + ',' + quiz.answer + ',\'' + escapeHtml(quiz.explanation || '') + '\')">' + escapeHtml(o) + '</button>').join('') +
-          '</div><div class="quiz-feedback" id="quiz-feedback"></div></div>'
-        : ''
+        window._currentLessonId = lessonId
+        window._currentCourseId = courseId
+        window._lessonInteractive = interactive
+    } else {
+        const concepts = (lesson.concepts || []).map((c, i) =>
+            '<div class="concept-block">' +
+            '<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.6rem">' +
+            '<span class="concept-num">' + (i + 1) + '</span>' +
+            '<span class="concept-title">' + escapeHtml(c.title) + '</span>' +
+            '</div>' +
+            '<p class="concept-text">' + escapeHtml(c.text) + '</p>' +
+            (c.code ? '<div class="code-block"><div class="code-header"><span>Code Example</span><button onclick="copyCode(this)">Copy</button></div><pre>' + escapeHtml(c.code) + '</pre></div>' : '') +
+            (c.classwork ? '<div class="classwork-box"><p class="classwork-label">Your Turn</p><p>' + escapeHtml(c.classwork) + '</p></div>' : '') +
+            '</div>'
+        ).join('')
 
-    renderFrame(app,
-        '<a class="back-link" onclick="navigate(\'course\',\'' + courseId + '\')">&#8592; ' + escapeHtml(course?.title || 'Course') + '</a>' +
-        '<div class="lesson-view">' +
-        '<h1>' + escapeHtml(lesson.title) + '</h1>' +
-        '<p class="lesson-desc">' + escapeHtml(lesson.desc) + '</p>' +
-        concepts +
-        (summaryHTML ? '<div class="summary-box"><h4>Key Takeaways</h4><ul>' + summaryHTML + '</ul></div>' : '') +
-        quizHTML +
-        '<div class="lesson-complete-section">' +
-        (!isDone ? '<button class="btn btn-primary btn-lg" onclick="markLessonComplete(\'' + courseId + '\',\'' + lessonId + '\')">Mark as Complete</button>' : '<div class="lesson-done-badge">Completed</div>') +
-        '</div>' +
-        '<div class="lesson-nav">' +
-        (prevLesson ? '<button class="btn btn-secondary" onclick="navigate(\'lesson\',\'' + courseId + '/' + prevLesson.id + '\')">&#8592; Previous</button>' : '<span></span>') +
-        (nextLesson ? '<button class="btn btn-primary" onclick="navigate(\'lesson\',\'' + courseId + '/' + nextLesson.id + '\')">Next &#8594;</button>' : '<span></span>') +
-        '</div></div>', 'courses')
+        const summaryHTML = (lesson.summary || []).map(s => '<li>' + escapeHtml(s) + '</li>').join('')
+
+        const quiz = lesson.quiz
+        const quizHTML = quiz
+            ? '<div class="quiz-section"><h3>Quick Check</h3><p class="quiz-question">' + escapeHtml(quiz.q) + '</p><div class="quiz-options">' +
+              quiz.options.map((o, i) => '<button class="quiz-option" onclick="selectQuizOption(this,' + i + ',' + quiz.answer + ',\'' + escapeHtml(quiz.explanation || '') + '\')">' + escapeHtml(o) + '</button>').join('') +
+              '</div><div class="quiz-feedback" id="quiz-feedback"></div></div>'
+            : ''
+
+        renderFrame(app,
+            '<a class="back-link" onclick="navigate(\'course\',\'' + courseId + '\')">&#8592; ' + escapeHtml(course?.title || 'Course') + '</a>' +
+            '<div class="lesson-view">' +
+            '<h1>' + escapeHtml(lesson.title) + '</h1>' +
+            '<p class="lesson-desc">' + escapeHtml(lesson.desc) + '</p>' +
+            concepts +
+            (summaryHTML ? '<div class="summary-box"><h4>Key Takeaways</h4><ul>' + summaryHTML + '</ul></div>' : '') +
+            quizHTML +
+            '<div class="lesson-complete-section">' +
+            (!isDone ? '<button class="btn btn-primary btn-lg" onclick="markLessonComplete(\'' + courseId + '\',\'' + lessonId + '\')">Mark as Complete</button>' : '<div class="lesson-done-badge">Completed</div>') +
+            '</div>' +
+            '<div class="lesson-nav">' +
+            (prevLesson ? '<button class="btn btn-secondary" onclick="navigate(\'lesson\',\'' + courseId + '/' + prevLesson.id + '\')">&#8592; Previous</button>' : '<span></span>') +
+            (nextLesson ? '<button class="btn btn-primary" onclick="navigate(\'lesson\',\'' + courseId + '/' + nextLesson.id + '\')">Next &#8594;</button>' : '<span></span>') +
+            '</div></div>', 'courses')
+    }
+}
+
+function sandboxValidate(code, rules) {
+    if (!rules) return false
+    const normalized = code.toLowerCase().replace(/\s+/g, ' ').trim()
+    const check = (p) => {
+        if (typeof p === 'string') return normalized.includes(p.toLowerCase().replace(/\s+/g, ' ').trim())
+        if (Array.isArray(p)) return p.every(item => normalized.includes(item.toLowerCase().replace(/\s+/g, ' ').trim()))
+        return false
+    }
+    if (Array.isArray(rules.patterns)) {
+        return rules.patterns.some(rule => check(rule))
+    }
+    return check(rules.patterns)
+}
+
+window.sandboxRun = function(lessonId) {
+    const code = document.getElementById('sandbox-code')?.value || ''
+    const output = document.getElementById('sandbox-output')
+    const feedback = document.getElementById('sandbox-feedback')
+    const completeBtn = document.getElementById('complete-btn')
+    const interactive = window._lessonInteractive
+    if (!interactive || !output || !feedback) return
+
+    output.className = 'console-output'
+    let outputLines = []
+    try {
+        const stdout = []
+        const fakePrint = (...args) => stdout.push(args.map(a => String(a)).join(' '))
+        const fn = new Function('print', 'input', 'len', 'range', 'str', 'int', 'float', 'type',
+            'return (function() {\n' +
+            '  const __out = [];\n' +
+            '  const print = (...a) => __out.push(a.map(x => String(x)).join(" "));\n' +
+            '  const len = x => (x && x.length !== undefined) ? x.length : 0;\n' +
+            '  const range = n => Array.from({length: n}, (_, i) => i);\n' +
+            '  const str = x => String(x);\n' +
+            '  const int = x => parseInt(x, 10);\n' +
+            '  const float = x => parseFloat(x);\n' +
+            '  const type = x => typeof x;\n' +
+            code + '\n' +
+            '  return __out.join("\\n");\n' +
+            '})()')
+        const result = fn(fakePrint)
+        outputLines = result ? result.split('\n') : []
+        output.textContent = outputLines.length ? outputLines.join('\n') : '(no output)'
+    } catch (e) {
+        output.textContent = 'Error: ' + e.message
+        output.className = 'console-output'
+        feedback.innerHTML = '<div class="feedback-msg error">❌ Runtime error: ' + escapeHtml(e.message) + '</div>'
+        return
+    }
+
+    if (sandboxValidate(code, interactive.validation)) {
+        output.textContent = outputLines.join('\n') + '\n\n✅ All checks passed!'
+        feedback.innerHTML = '<div class="feedback-msg success">' + interactive.successMsg + '</div>'
+        if (completeBtn) completeBtn.disabled = false
+        if (!document.getElementById('lesson-done-flag')) showConfetti()
+    } else {
+        feedback.innerHTML = '<div class="feedback-msg hint">💡 ' + escapeHtml(interactive.hint) + '</div>'
+    }
+}
+
+window.sandboxReset = function(lessonId) {
+    const interactive = window._lessonInteractive
+    if (!interactive) return
+    const ta = document.getElementById('sandbox-code')
+    if (ta) ta.value = interactive.starterCode
+    const output = document.getElementById('sandbox-output')
+    if (output) { output.textContent = 'Click "Run Code" to test your solution...'; output.className = 'console-output console-idle' }
+    const fb = document.getElementById('sandbox-feedback')
+    if (fb) fb.innerHTML = ''
+    const btn = document.getElementById('complete-btn')
+    if (btn) btn.disabled = true
+}
+
+window.sandboxHint = function(lessonId) {
+    const feedback = document.getElementById('sandbox-feedback')
+    const interactive = window._lessonInteractive
+    if (feedback && interactive) {
+        feedback.innerHTML = '<div class="feedback-msg hint">💡 ' + escapeHtml(interactive.hint) + '</div>'
+    }
+}
+
+window.sandboxComplete = async function(courseId, lessonId) {
+    if (!_user) { navigate('login'); return }
+    await saveLessonProgress(_user.$id, courseId, lessonId)
+    await addXp(CONFIG.limits.xpPerLesson)
+    showToast('Lesson complete! +' + CONFIG.limits.xpPerLesson + ' XP', 'success')
+    showConfetti()
+    const course = await fetchCourse(courseId)
+    if (course) {
+        const progress = await getLessonProgress(_user.$id, courseId)
+        if (progress.length === course.lessons?.length) {
+            await checkAndAwardCertificate(_user.$id, courseId)
+            showToast('Course complete! Certificate earned!', 'success')
+        }
+    }
+    const btn = document.getElementById('complete-btn')
+    if (btn) { btn.disabled = true; btn.textContent = '✓ Completed' }
+}
+
+function showConfetti() {
+    const container = document.createElement('div')
+    container.className = 'confetti-container'
+    const colors = ['#D4A842', '#4E9DFF', '#22C55E', '#F59E0B', '#EF4444', '#EC4899']
+    for (let i = 0; i < 50; i++) {
+        const piece = document.createElement('div')
+        piece.className = 'confetti-piece'
+        piece.style.left = Math.random() * 100 + '%'
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)]
+        piece.style.animationDelay = Math.random() * 0.5 + 's'
+        piece.style.animationDuration = (1.5 + Math.random()) + 's'
+        piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px'
+        piece.style.width = (6 + Math.random() * 8) + 'px'
+        piece.style.height = (6 + Math.random() * 8) + 'px'
+        container.appendChild(piece)
+    }
+    document.body.appendChild(container)
+    setTimeout(() => container.remove(), 3000)
 }
 
 window.selectQuizOption = function(btn, idx, correct, explanation) {
