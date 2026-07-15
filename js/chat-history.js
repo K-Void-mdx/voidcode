@@ -65,6 +65,16 @@ function deleteChat(chatId) {
     }
 }
 
+function renameChat(chatId, newTitle) {
+    const chats = loadChatHistory()
+    const chat = chats.find(c => c.id === chatId)
+    if (!chat) return
+    chat.title = newTitle || 'Untitled'
+    chat.updated_at = new Date().toISOString()
+    saveChatHistory(chats)
+    return chat
+}
+
 function getChatMessages(chatId) {
     const chats = loadChatHistory()
     const chat = chats.find(c => c.id === chatId)

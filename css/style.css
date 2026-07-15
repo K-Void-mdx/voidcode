@@ -663,11 +663,52 @@ ul, ol { list-style: none; }
 .ai-tutor { display: flex; height: 100%; overflow: hidden; position: relative; }
 .ai-history-panel {
     width: 280px; min-width: 280px; border-right: 1px solid var(--border);
-    display: flex; flex-direction: column; background: var(--surface);
+    display: flex; flex-direction: column; background: var(--bg-card);
     position: absolute; left: 0; top: 0; bottom: 0; z-index: 10;
     transform: translateX(-100%); transition: transform 0.25s ease;
 }
 .ai-history-panel.open { transform: translateX(0); }
+.ai-chat-list { flex: 1; overflow-y: auto; padding: 0.5rem; }
+.ai-chat-item {
+    display: flex; flex-direction: column; gap: 0.15rem;
+    padding: 0.65rem 0.75rem; border-radius: var(--radius);
+    cursor: pointer; transition: background 0.15s; position: relative;
+    border: 1px solid transparent; margin-bottom: 0.25rem;
+}
+.ai-chat-item:hover { background: var(--bg-hover); }
+.ai-chat-item.active { background: var(--primary-subtle); border-color: var(--primary); }
+.ai-chat-item-title { font-size: 0.85rem; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-chat-item-time { font-size: 0.7rem; color: var(--text-dim); }
+.ai-chat-item-del {
+    position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%);
+    font-size: 0.75rem; color: var(--text-dim); padding: 0.2rem 0.4rem;
+    border-radius: var(--radius-sm); opacity: 0; transition: opacity 0.15s;
+}
+.ai-chat-item:hover .ai-chat-item-del { opacity: 1; }
+.ai-chat-item-del:hover { color: var(--danger); background: var(--danger-subtle); }
+
+/* Long-press context menu */
+.ai-ctx-menu {
+    position: fixed; z-index: 100; background: var(--bg-elevated);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow-lg); padding: 0.35rem 0; min-width: 140px;
+}
+.ai-ctx-menu-item {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.5rem 0.85rem; font-size: 0.825rem; color: var(--text);
+    cursor: pointer; transition: background 0.1s; width: 100%; border: none; background: none;
+    text-align: left; font-family: inherit;
+}
+.ai-ctx-menu-item:hover { background: var(--bg-hover); }
+.ai-ctx-menu-item.danger { color: var(--danger); }
+.ai-ctx-menu-item.danger:hover { background: var(--danger-subtle); }
+
+/* Rename input inside chat item */
+.ai-rename-input {
+    font-size: 0.85rem; font-weight: 500; color: var(--text);
+    background: var(--bg); border: 1px solid var(--primary); border-radius: var(--radius-sm);
+    padding: 0.2rem 0.4rem; width: 100%; outline: none;
+}
 .ai-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
 .ai-main-topbar { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
 .ai-messages {

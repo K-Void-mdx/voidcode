@@ -855,10 +855,9 @@ function renderAiTutor(app) {
 
     const chats = loadChatHistory()
     const chatListHTML = chats.map(c => `
-        <div class="ai-chat-item ${c.id === activeChat.id ? 'active' : ''}" onclick="aiSwitchChat('${c.id}')">
+        <div class="ai-chat-item ${c.id === activeChat.id ? 'active' : ''}" data-chat-id="${c.id}" onclick="aiSwitchChat('${c.id}')" oncontextmenu="event.preventDefault();aiShowCtx(event,'${c.id}')">
             <div class="ai-chat-item-title">${escapeHtml(c.title)}</div>
             <div class="ai-chat-item-time">${formatChatTimestamp(c.updated_at)}</div>
-            <button class="ai-chat-item-del" onclick="event.stopPropagation();aiDeleteChat('${c.id}')" title="Delete">✕</button>
         </div>
     `).join('') || '<div style="padding:1rem;color:var(--text-dim);font-size:0.8rem;text-align:center">No chats yet</div>'
 
@@ -902,6 +901,88 @@ function renderAiTutor(app) {
 
     const scrollMsgs = () => { const el = $('ai-messages'); if (el) el.scrollTop = el.scrollHeight }
     scrollMsgs()
+
+    let _longPressTimer = null
+    let _activeCtx = null
+    const ITEMS = document.querySelectorAll('.ai-chat-item[data-chat-id]')
+
+    function clearCtx() { if (_activeCtx) { _activeCtx.remove(); _activeCtx = null } }
+
+    ITEMS.forEach(el => {
+        const chatId = el.dataset.chatId
+
+        const startPress = (e) => {
+            clearCtx()
+            _longPressTimer = setTimeout(() => {
+                _longPressTimer = null
+                const rect = el.getBoundingClientRect()
+                showCtxMenu(rect.right + 4, rect.top, chatId)
+            }, 2000)
+        }
+        const cancelPress = () => { if (_longPressTimer) { clearTimeout(_longPressTimer); _longPressTimer = null } }
+
+        el.addEventListener('touchstart', startPress, { passive: true })
+        el.addEventListener('touchend', cancelPress)
+        el.addEventListener('touchmove', cancelPress)
+        el.addEventListener('mousedown', startPress)
+        el.addEventListener('mouseup', cancelPress)
+        el.addEventListener('mouseleave', cancelPress)
+    })
+
+    document.addEventListener('click', clearCtx, { once: true })
+
+    function showCtxMenu(x, y, chatId) {
+        clearCtx()
+        const menu = document.createElement('div')
+        menu.className = 'ai-ctx-menu'
+        menu.style.left = x + 'px'
+        menu.style.top = y + 'px'
+        menu.innerHTML = `
+            <button class="ai-ctx-menu-item" data-action="rename">✏️ Rename</button>
+            <button class="ai-ctx-menu-item danger" data-action="delete">🗑️ Delete</button>
+        `
+        menu.addEventListener('click', (e) => {
+            e.stopPropagation()
+            const action = e.target.dataset.action
+            if (action === 'delete') aiDeleteChat(chatId)
+            else if (action === 'rename') aiStartRename(chatId)
+            clearCtx()
+        })
+        document.body.appendChild(menu)
+        _activeCtx = menu
+
+        const mRect = menu.getBoundingClientRect()
+        if (mRect.right > window.innerWidth) menu.style.left = (x - mRect.width - 8) + 'px'
+        if (mRect.bottom > window.innerHeight) menu.style.top = (y - mRect.height) + 'px'
+    }
+
+    window.aiShowCtx = function(e, chatId) {
+        e.preventDefault()
+        e.stopPropagation()
+        showCtxMenu(e.clientX, e.clientY, chatId)
+    }
+
+    window.aiStartRename = function(chatId) {
+        const item = document.querySelector(`.ai-chat-item[data-chat-id="${chatId}"]`)
+        if (!item) return
+        const titleEl = item.querySelector('.ai-chat-item-title')
+        const currentTitle = titleEl.textContent
+        titleEl.innerHTML = `<input class="ai-rename-input" value="${escapeHtml(currentTitle)}" maxlength="50">`
+        const input = titleEl.querySelector('input')
+        input.focus()
+        input.select()
+
+        const save = () => {
+            const val = input.value.trim()
+            if (val && val !== currentTitle) renameChat(chatId, val)
+            renderAiTutor(app)
+        }
+        input.addEventListener('blur', save)
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); input.blur() }
+            if (e.key === 'Escape') { input.value = currentTitle; input.blur() }
+        })
+    }
 
     window.aiToggleHistory = function() {
         const panel = $('ai-history-panel')
