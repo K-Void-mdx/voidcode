@@ -184,7 +184,6 @@ function renderTopbar() {
 function renderSidebar(active) {
     const items = [
         { id: 'dashboard', icon: '▦', label: 'Dashboard' },
-        { id: 'paths', icon: '◎', label: 'Learning Paths' },
         { id: 'courses', icon: '▤', label: 'Courses' },
         { id: 'ai-tutor', icon: '◈', label: 'AI Tutor' },
         { id: 'bookmarks', icon: '◆', label: 'Bookmarks' },
@@ -679,28 +678,7 @@ async function renderCourses(app) {
     const filters = ['All', 'Beginner', 'Intermediate', 'Advanced']
     const cards = (await Promise.all(courses.map(c => courseCardMini(c, progressMap[c.id])))).join('')
 
-    const tracks = [
-        { icon: '🌐', title: 'Build Websites', desc: 'HTML & CSS → JavaScript', color: '#E44D26', courses: ['html-css-beginner', 'javascript-beginner'] },
-        { icon: '🤖', title: 'Build AI & Smart Systems', desc: 'Python → SQL → Data Science', color: '#3776AB', courses: ['python-beginner', 'sql-beginner', 'data-science'] },
-        { icon: '📱', title: 'Build Phone Apps', desc: 'Kotlin (Android) or Swift (iOS)', color: '#7F52FF', courses: ['kotlin-beginner', 'swift-beginner'] },
-        { icon: '⚙️', title: 'Build Systems & Engines', desc: 'C → C++ → Rust', color: '#00599C', courses: ['c-beginner', 'cpp-beginner', 'rust-beginner'] }
-    ]
-    const tracksHTML = tracks.map(t => `
-        <div class="career-track" onclick="navigate('courses')" style="background:${t.color}11;border:1px solid ${t.color}33;border-radius:var(--radius);padding:1rem 1.25rem;cursor:pointer;transition:all 0.2s" onmouseenter="this.style.borderColor='${t.color}';this.style.boxShadow='0 0 12px ${t.color}22'" onmouseleave="this.style.borderColor='${t.color}33';this.style.boxShadow='none'">
-            <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.4rem">
-                <span style="font-size:1.5rem">${t.icon}</span>
-                <div>
-                    <div style="font-weight:700;font-size:0.95rem;color:var(--text)">${t.title}</div>
-                    <div style="font-size:0.8rem;color:var(--text-secondary)">${t.desc}</div>
-                </div>
-            </div>
-        </div>
-    `).join('')
-
     renderFrame(app, `
-        <div class="section-header"><h2>What do you want to build?</h2></div>
-        <p style="color:var(--text-secondary);margin-bottom:1rem;font-size:0.9rem">Choose a career goal, or browse all courses below.</p>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75rem;margin-bottom:2rem">${tracksHTML}</div>
         <div class="section-header"><h2>All Courses</h2></div>
         <p style="color:var(--text-secondary);margin-bottom:1.5rem">${courses.length} courses available</p>
         <div class="course-grid">${cards}</div>
