@@ -316,10 +316,12 @@ window.handleForgot = async function(e) {
     btn.textContent = 'Sending...'
     btn.disabled = true
     try {
+        await initAppwrite()
         await sendPasswordReset(email)
         showToast('Reset link sent to your email!', 'success')
         navigate('login')
     } catch (e) {
+        console.error('Password reset failed:', e)
         if (err) err.textContent = e.message || 'Failed to send reset link.'
         btn.textContent = 'Send Reset Link'
         btn.disabled = false
